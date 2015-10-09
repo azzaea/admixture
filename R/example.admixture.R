@@ -6,8 +6,8 @@ source("misc.R")
 source("mcmc.R")
 source("admixture.R")
 source("sim.data.R")
-dyn.load("mcmc.so")
-dyn.load("admixture.so")
+# dyn.load("mcmc.so")
+# dyn.load("admixture.so")
 
 # SCRIPT PARAMETERS
 # -----------------
@@ -29,8 +29,7 @@ k.test <- rep(c(1,2,4),each = 100)
 # that the first temperature is 1 and the last temperature is near 0.
 T <- 1/cooling.sched.geom(1e4,6e-4)
 
-# All the data files are written to this directory, and ADMIXTURE
-# output files will be created in this directory.
+# All the data files are written to this directory.
 data.dir <- "."
 
 # Initialize the random number generator.
@@ -88,57 +87,19 @@ for (i in 1:n.test) {
 }
 rm(i,k)
 
-# SAVE TRAINING AND TEST DATA TO FILE
-# -----------------------------------
-srcdir <- getwd()
-setwd(data.dir)
-
-# Save the genotypes of the training and test samples to a text file
-# in the format used by EIGENSTRAT (a .geno file). It is important to
-# reorder the training samples according to the population labels so
-# that the admixture proportions are outputted in the same order as
-# they are here.
-cat("Writing genotype data to .geno file.\n")
-z    <- c(q.train %*% 1:K)
-rows <- order(z)
-write.geno.file("sim.geno",rbind(geno.train[rows,],geno.test))
-
-# To run ADMIXTURE in "supervised" mode, I need to create an
-# additional .pop file.
-cat("Writing population labels for training samples to .pop file.\n")
-write.pop.file("sim.pop",c(z[rows],rep(NA,n.test)))
-rm(z,rows)
-
-# RUN ADMIXTURE
-# -------------
-# Run ADMIXTURE in "supervised" mode.
-cat("Running ADMIXTURE.\n")
-r <- system.time(system(sprintf(paste("%s --supervised --seed=1 -j%d",
-                                      "sim.geno %d > sim.out"),
-                                admix.exec,mc.cores,K)))
-cat(sprintf("Computation took %0.1f s.\n",r["elapsed"]))
-
-# Load the estimated allele frequencies and admixture proportions.
-out.admix <- list(F = read.admixture.P.file(paste0("sim.",K,".P")),
-                  Q = read.admixture.Q.file(paste0("sim.",K,".Q")))
-
-# Restore the working directory.
-setwd(srcdir)
-rm(r)
-
 # Randomly set a small proportion of the genotypes to missing.
 cat("Setting ",100*prop.na,"% of the genotypes to NA.\n",sep="")
 geno.train[runif(n*p) < prop.na]     <- NA
 geno.test[runif(n.test*p) < prop.na] <- NA
 
+# COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING EM
+# -------------------------------------------------------
+cat("Computing maximum-likelihood estimates of admixture proportions.\n")
+# TO DO.
+
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
-cat("Estimating allele frequencies and admixture proportions",
-    "in unlabeled examples.\n")
-cat("EM algorithm setings:\n")
-cat("  Strength of L0-penalty    ",a,"\n")
-cat("  Genotype error probability",e,"\n")
-z <- c(q.train %*% 1:K,rep(NA,n.test))
+cat("Computing l0-penalized estimates of admixture proportions.\n")
 r <- system.time(out <-
        admixture.em(rbind(geno.train,geno.test),K,z,e,a = a,F = out.admix$F,
                     Q = out.admix$Q,exact.q = FALSE,T = T,tolerance = 1e-4,

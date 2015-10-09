@@ -16,7 +16,7 @@ n        <- 500   # Number of samples.
 e        <- 0.01  # Probability of genotype error.
 a        <- 1e-3  # Strength of L0-penalty.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 20    # Number of CPUs to use.
+mc.cores <- 2     # Number of CPUs to use.
 
 # Specifies the amount of genetic drift for each population. For
 # details on the relationship between this parameter and population
