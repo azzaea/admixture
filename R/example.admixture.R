@@ -6,8 +6,8 @@ source("misc.R")
 source("mcmc.R")
 source("admixture.R")
 source("sim.data.R")
-# dyn.load("mcmc.so")
-# dyn.load("admixture.so")
+dyn.load("mcmc.so")
+dyn.load("admixture.so")
 
 # SCRIPT PARAMETERS
 # -----------------
@@ -94,37 +94,39 @@ geno.test[runif(n.test*p) < prop.na] <- NA
 
 # COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------------
-cat("Computing maximum-likelihood estimates of admixture proportions.\n")
-# TO DO.
+cat("Computing maximum-likelihood admixture proportion estimates.\n")
+X <- rbind(geno.train,geno.test)
+r <- system.time(out.em <- admixture.em(X,K,e = e,cg = TRUE,mc.cores=mc.cores))
+cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
+rm(r)
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
-cat("Computing l0-penalized estimates of admixture proportions.\n")
-r <- system.time(out <-
-       admixture.em(rbind(geno.train,geno.test),K,z,e,a = a,F = out.admix$F,
-                    Q = out.admix$Q,exact.q = FALSE,T = T,tolerance = 1e-4,
-                    cg = TRUE,mc.cores = mc.cores))
+cat("Computing l0-penalized admixture proportion estimates.\n")
+r <- system.time(out.sparse <-
+       admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,exact.q = FALSE,
+                    T = T,cg = TRUE,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(z,r)
+rm(r)
 
 # ASSESS ACCURACY IN TEST SAMPLES
 # -------------------------------
 cat("Overlap between estimated and ground-truth admixture proportions:\n")
 bins <- c(seq(0,0.8,0.1),0.85,0.9,0.95,1)
-r <- rbind(table(cut(rowSums(pmin(q.test,out.admix$Q[-(1:n),])),bins)),
-           table(cut(rowSums(pmin(q.test,out$Q[-(1:n),])),bins)))
+r <- rbind(table(cut(rowSums(pmin(q.test,out.em$Q[-(1:n),])),bins)),
+           table(cut(rowSums(pmin(q.test,out.sparse$Q[-(1:n),])),bins)))
 rownames(r) <- c("ADMIXTURE","EM + L0")
 colnames(r) <- bins[-length(bins)]
 print(r)
 cat("\n")
 
-cat("Number of contributing ancestral populations:\n")
+cat("Number of contributing ancestral populations (>0.1%):\n")
 r <- table(factor(rowSums(q.test > 0.001)),
-           factor(rowSums(out.admix$Q[-(1:n),] > 0.001)))
+           factor(rowSums(out.em$Q[-(1:n),] > 0.001)))
 names(dimnames(r)) <- c("true","ADMIXTURE")
 print(r)
 cat("\n")
 r <- table(factor(rowSums(q.test > 0.001)),
-           factor(rowSums(out$Q[-(1:n),] > 0.001)))
+           factor(rowSums(out.sparse$Q[-(1:n),] > 0.001)))
 names(dimnames(r)) <- c("true","EM + L0")
 print(r)

@@ -530,7 +530,7 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 #
 #   z   vector giving the population of origin for each of the samples
 #       (an integer between 1 and K), or NA if the sample is unlabeled.
-#       If set to null, or not specified, all samples are unlabeled.
+#       If set to NULL, or not specified, all samples are unlabeled.
 #
 # The return value is a list with two list elements: F, the p x k
 # matrix of population-specific allele frequency estimates; and Q, the
@@ -562,7 +562,7 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 # iterates.
 #
 admixture.em <- function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-                          tolerance = 1e-6, max.iter = 1e3, exact.q = FALSE,
+                          tolerance = 1e-4, max.iter = 1000, exact.q = FALSE,
                           cg = FALSE,mc.cores = 1, verbose = TRUE, T = 1) {
 
   # This is a small constant added to allele frequency estimates to
@@ -626,7 +626,7 @@ admixture.em <- function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
     # iteration.
     g0 <- g
     d0 <- d
-    
+
     # E-STEP
     # Compute the expected allele counts from the labeled, single-origin
     # samples. I add a small constant to n0 and n1 so that the counts are

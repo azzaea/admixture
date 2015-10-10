@@ -20,7 +20,7 @@ distribute <- function (x, k)
 # beginning of the string so that subsequent output will overwrite
 # this string.
 caterase <- function (s)
-    cat(s,rep("\b",nchar(s)),sep = "")
+  cat(s,rep("\b",nchar(s)),sep = "")
 
 # ----------------------------------------------------------------------
 # Return the parameters of the Beta distribution that yield a random
