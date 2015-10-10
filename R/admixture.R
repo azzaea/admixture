@@ -4,92 +4,26 @@
 # admixture proportions from genotype data. Here is an overview of the
 # functions defined in this file:
 #
-#   genoprob0(x,u,e)
-#   genoprob(x,u,e)
-#   genoprob.given.q(f,q,e)
 #   genoprob.given.q.fast(f,q,e)
 #   calc.geno.error(X,A,F,Q,e)
 #   update.q.sparse.exact(M,a)
 #   update.q.sparse.approx(M,x0,a,T,u)
 #   update.q.sparse.approx.mc(M,x0,a,T,u,mc.cores)
-#   admixture.labeled.Estep(X,F,z,e)
 #   admixture.labeled.Estep.fast(X,F,z,e)
 #   admixture.labeled.Estep.mc(X,F,z,e,mc.cores)
-#   admixture.Estep(X,F,Q,n0,n1,e)
 #   admixture.Estep.fast(X,F,Q,n0,n1,e)
 #   admixture.Estep.mc(X,F,Q,n0,n1,e,mc.cores)
 #   admixture.em(X,n0,n1,e,a,F,Q,tolerance,max.iter,exact.q,mc.cores,verbose,T)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------
-# Returns the probability of the unphased genotype (represented by the
-# allele count) given the phased genotype (u1, u2). The last input
-# argument (e) specifies the probability of a genotype error. Set
-# input u = u1 + u2, where (u1,u2) is the phased genotype. This
-# function does not allow for input x to have missing values (NA).
-genoprob0 <- function (x, u, e)
-  (1-2*e) * (x == u) + e * (x != u)
-
-# ----------------------------------------------------------------------
-# Returns the probability of the unphased genotype given the phased
-# genotype, allowing for missing genotypes. Inputs x and u may be
-# either vectors or matrices. See genoprob0 for more details about
-# these inputs. When the genotype x is missing (NA), the return value
-# is 0.5 if u = 1, and 0.25 otherwise.
-genoprob <- function (x, u, e = 0.001) {
-
-  # When x or u is a scalar, convert the scalar to a vector of the
-  # same length as the other input.
-  if (length(x) == 1)
-    x <- rep(x,length(u))
-  else if (length(u) == 1)
-    u <- rep(u,length(x))
-  
-  # Initialize the return value.
-  y <- rep(1/3,length(x))
-  
-  # Calculate the probabilities for the non-missing genotypes.
-  i    <- !is.na(x)
-  y[i] <- genoprob0(x[i],u[i],e)
-  return(y)
-}
-
-# ----------------------------------------------------------------------
 # Returns the probability of the genotype (i.e. allele count) given
 # the vector of population-specific allele frequencies (f), the
 # admixture proportions (q) and the genotype error probability (e).
 # The return value is a vector of length 3 containing the probability
-# that the allele count is 0, 1 and 2,
-genoprob.given.q <- function (f, q, e) {
-
-  # Get the number of ancestral populations.
-  n <- length(q)
-  
-  # Initialize the return value.
-  px <- c(0,0,0)
-
-  # Repeat for each combination of ancestral populations.
-  for (i in 1:n)
-    for (j in 1:n) {
-
-      # Compute the probability that the allele count of the unphased
-      # genotype is equal to x given the assignment (i,j) to the
-      # population-of-origin indicators.
-      for (x in 0:2)
-        px[x+1] <- px[x+1] + q[i]*q[j] *
-          (genoprob0(x,0,e) * (1-f[i]) * (1-f[j]) +
-           genoprob0(x,1,e) * (1-f[i]) * f[j] +
-           genoprob0(x,1,e) * f[i]     * (1-f[j]) +
-           genoprob0(x,2,e) * f[i]     * f[j])
-      }
-  
-  # Return the genotype probabilities.
-  return(px)
-}
-
-# ----------------------------------------------------------------------
-# This is the same as function genotype.given.q, except that it should
-# run much faster. This function calls "genoprob_given_q_Call", a
+# that the allele count is 0, 1 and 2.
+#
+# This function calls "genoprob_given_q_Call", a
 # function compiled from C code, using the .Call interface. For more
 # details on how to load the C function into R, see the comments
 # accompanying function admixture.labeled.Estep.fast.
@@ -248,53 +182,6 @@ update.q.sparse.approx.mc <- function (M, x0, a, T, u, mc.cores = 2) {
 # These sufficient statistics are stored in two p x k matrices, where
 # p is the number of markers and k is the number of ancestral
 # populations.
-admixture.labeled.Estep <- function (X, F, z, e) {
-
-  # Get the number of samples (n), the number of markers (p), and the
-  # number of ancestral populations (K).
-  n <- nrow(X)
-  p <- ncol(X)
-  K <- ncol(F)
-  
-  # Initialize the expected allele counts.
-  n0 <- matrix(0,p,K)
-  n1 <- matrix(0,p,K)
-
-  # Initialize storage for the posterior probabilities of the hidden
-  # (phased) genotypes for a single sample.
-  r           <- matrix(0,p,4)
-  colnames(r) <- c("00","01","10","11")
-
-  # Repeat for each sample.
-  for (i in 1:n) {
-
-    # Get the ancestral population of origin for the ith sample.
-    k <- z[i]
-
-    # Compute the posterior probabilities for all possible hidden
-    # (phased) genotype configurations at each locus. Note that
-    # genotype configurations (0,1) and (1,0) always have the same
-    # posterior probability.
-    r[,"00"] <- genoprob(X[i,],0,e) * (1 - F[,k])^2
-    r[,"01"] <- genoprob(X[i,],1,e) * (1 - F[,k]) * F[,k]
-    r[,"10"] <- genoprob(X[i,],1,e) * (1 - F[,k]) * F[,k]
-    r[,"11"] <- genoprob(X[i,],2,e) * F[,k]^2
-    r        <- r/rowSums(r)
-
-    # Add the posterior probabilities to the expected allele counts.
-    n0[,k] <- n0[,k] + 2*(r[,"00"] + r[,"01"])
-    n1[,k] <- n1[,k] + 2*(r[,"11"] + r[,"10"])
-  }
-
-  # Return the expected allele counts.
-  return(list(n0 = n0,n1 = n1))
-}
-
-# ----------------------------------------------------------------------
-# Compute the expected allele counts "n0" and "n1", the sufficient
-# statistics for updating the population-specific allele
-# frequencies. This is the same as function admixture.labeled.Estep,
-# except that it should run much faster.
 #
 # This function calls "admixture_labeled_Estep_Call", a function
 # compiled from C code, using the .Call interface. To load the C
@@ -369,74 +256,6 @@ admixture.labeled.Estep.mc <- function (X, F, z, e, mc.cores = 2) {
 # user to specify "prior counts" based on other information (e.g. a
 # reference panel). If no prior counts are available, set all the
 # entries of these two matrices to zero.
-admixture.Estep <- function (X, F, Q, n0, n1, e) {
-
-  # Get the number of samples (n), the number of markers (p), and the
-  # number of ancestral populations (K).
-  n <- nrow(X)
-  p <- ncol(X)
-  K <- ncol(F)
-  
-  # Initialize the expected population counts.
-  m <- matrix(0,n,K)
-
-  # Initialize storage for the posterior probabilities of the hidden
-  # (phased) genotypes x population indicators for a single sample.
-  r <- array(0,dim = c(p,4,K,K))
-    
-  # Update the expected allele counts and population counts. Repeat
-  # for each sample.
-  for (i in 1:n) {
-    colnames(r) <- c("00","01","10","11")
-
-    # Repeat for each combination of ancestral populations.
-    for (j in 1:K)
-      for (k in 1:K) {
-
-        # Compute the posterior probabilities for all possible hidden
-        # (phased) genotype configurations at each locus, given the
-        # assigment (j,k) to the population-of-origin indicators. Note
-        # that genotype configurations (0,1) and (1,0) do *not* have
-        # the same posterior probability here (except when j and k are
-        # the same).
-        r[,"00",j,k] <- genoprob(X[i,],0,e) * (1 - F[,j]) * (1 - F[,k])
-        r[,"01",j,k] <- genoprob(X[i,],1,e) * (1 - F[,j]) * F[,k]
-        r[,"10",j,k] <- genoprob(X[i,],1,e) * F[,j]       * (1 - F[,k])
-        r[,"11",j,k] <- genoprob(X[i,],2,e) * F[,j]       * F[,k]
-        r[,,j,k]     <- r[,,j,k] * Q[i,j] * Q[i,k]
-      }
-
-    # Normalize the posterior probabilities.
-    dim(r) <- c(p,4*K^2)
-    r      <- r/rowSums(r)
-      
-    # Add the posterior probabilities to the sufficient statistics.
-    dim(r)      <- c(p,4,K,K)
-    colnames(r) <- c("00","01","10","11")
-    m[i,]       <- m[i,] + apply(r,3,sum) + apply(r,4,sum)
-    for (k in 1:K) {
-      n0[,k] <- n0[,k] + rowSums(drop(r[,"00",k,])) +
-                         rowSums(drop(r[,"01",k,])) +
-                         rowSums(drop(r[,"00",,k])) +
-                         rowSums(drop(r[,"10",,k]))
-      n1[,k] <- n1[,k] + rowSums(drop(r[,"10",k,])) +
-                         rowSums(drop(r[,"11",k,])) +
-                         rowSums(drop(r[,"01",,k])) +
-                         rowSums(drop(r[,"11",,k]))
-    }
-  }
-
-  # Return a list containing the expected allele counts (n0 and n1)
-  # and the expected population counts (m).
-  return(list(n0 = n0,n1 = n1,m = m))
-}
-
-# ----------------------------------------------------------------------
-# Compute the expected allele counts "n0" and "n1" and the expected
-# population counts "m", the sufficient statistics for updating the
-# population-specific allele frequencies and the admixture
-# proportions, respectively. This is the same as function
-# admixture.Estep, except that it should run much faster.
 #
 # This function calls "admixture_unlabeled_Estep_Call", a function
 # compiled from C code, using the .Call interface. For more details on

@@ -19,7 +19,7 @@ prop.na  <- 0.01  # Proportion of genotypes that are missing.
 e        <- 0.01  # Probability of genotype error.
 a        <- 3e-3  # L0-penalty strength.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 2     # Number of CPUs to use.
+mc.cores <- 20    # Number of CPUs to use.
 
 # A vector that specifies, for each test individual, the number of
 # populations contributing to the individual's genome.
@@ -96,16 +96,21 @@ geno.test[runif(n.test*p) < prop.na] <- NA
 # -------------------------------------------------------
 cat("Computing maximum-likelihood admixture proportion estimates.\n")
 X <- rbind(geno.train,geno.test)
-r <- system.time(out.em <- admixture.em(X,K,e = e,cg = TRUE,mc.cores=mc.cores))
+r <- system.time(out.em <-
+       admixture.em(X,K,e = e,cg = TRUE,max.iter = 2000,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
 rm(r)
 
+# Relabel the ancestral populations so that the admixture proportions
+# best coincide with the ground-truth admixture proportions.
+# TO DO.
+
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
-cat("Computing l0-penalized admixture proportion estimates.\n")
+cat("Computing L0-penalized admixture proportion estimates.\n")
 r <- system.time(out.sparse <-
-       admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,exact.q = FALSE,
-                    T = T,cg = TRUE,mc.cores = mc.cores))
+       admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,cg = TRUE,
+                    exact.q = FALSE,T = T,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
 rm(r)
 
