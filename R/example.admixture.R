@@ -26,7 +26,7 @@ k.test <- rep(c(1,2,4),each = 100)
 
 # The sequence of inverse temperatures for simulated annealing such
 # that the first temperature is 1 and the last temperature is near 0.
-T <- 1/cooling.sched.geom(1e4,6e-4)
+T <- 1/cooling.sched.geom(1e3,6e-3)
 
 # All the data files are written to this directory.
 data.dir <- "."
@@ -94,16 +94,11 @@ geno.test[runif(n.test*p) < prop.na] <- NA
 # -------------------------------------------------------
 cat("Computing maximum-likelihood admixture proportion estimates.\n")
 X <- rbind(geno.train,geno.test)
+z <- c(q.train %*% 1:K,rep(NA,n.test))
 r <- system.time(out.em <-
-       admixture.em(X,K,e = e,cg = TRUE,max.iter = 2000,mc.cores = mc.cores))
+       admixture.em(X,K,z,e = e,cg = TRUE,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
 rm(r)
-
-# Relabel the ancestral populations so that the admixture proportions
-# best coincide with the ground-truth admixture proportions.
-# TO DO.
-
-stop()
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
@@ -120,18 +115,18 @@ cat("Overlap between estimated and ground-truth admixture proportions:\n")
 bins <- c(seq(0,0.8,0.1),0.85,0.9,0.95,1)
 r <- rbind(table(cut(rowSums(pmin(q.test,out.em$Q[-(1:n),])),bins)),
            table(cut(rowSums(pmin(q.test,out.sparse$Q[-(1:n),])),bins)))
-rownames(r) <- c("ADMIXTURE","EM + L0")
+rownames(r) <- c("ML","L0")
 colnames(r) <- bins[-length(bins)]
 print(r)
 cat("\n")
 
-cat("Number of contributing ancestral populations (>0.1%):\n")
-r <- table(factor(rowSums(q.test > 0.001)),
-           factor(rowSums(out.em$Q[-(1:n),] > 0.001)))
-names(dimnames(r)) <- c("true","ADMIXTURE")
+cat("Number of contributing ancestral populations (>1%):\n")
+r <- table(factor(rowSums(q.test > 0.01)),
+           factor(rowSums(out.em$Q[-(1:n),] > 0.01)))
+names(dimnames(r)) <- c("true","ML")
 print(r)
 cat("\n")
-r <- table(factor(rowSums(q.test > 0.001)),
-           factor(rowSums(out.sparse$Q[-(1:n),] > 0.001)))
-names(dimnames(r)) <- c("true","EM + L0")
+r <- table(factor(rowSums(q.test > 0.01)),
+           factor(rowSums(out.sparse$Q[-(1:n),] > 0.01)))
+names(dimnames(r)) <- c("true","L0")
 print(r)
