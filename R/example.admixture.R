@@ -12,7 +12,6 @@ dyn.load("admixture.so")
 # SCRIPT PARAMETERS
 # -----------------
 p        <- 200   # Number of (unlinked) markers.
-nrep     <- 5     # Number of markers in each LD block.
 K        <- 20    # Number of ancestral populations.
 n        <- 100   # Number of single-origin training samples.
 prop.na  <- 0.01  # Proportion of genotypes that are missing.
@@ -38,7 +37,7 @@ set.seed(seed)
 # GENERATE TRAINING AND TEST DATA
 # -------------------------------
 cat("Simulating data with the following settings:\n")
-cat("  markers              ",p,"x",nrep,"=",p*nrep,"\n")
+cat("  markers              ",p,"\n")
 cat("  ancestral populations",K,"\n")
 cat("  training samples     ",n,"\n")
 cat("  test samples         ",length(k.test),"\n")
@@ -58,7 +57,6 @@ f <- matrix(f,p,K)
 # genotypes are stored as an n x p matrix, where n is the number of
 # samples, p is the number of markers, and k is the number of
 # ancestral populations.
-p          <- p * nrep
 n.test     <- length(k.test)
 q.train    <- matrix(0,n,K)
 q.test     <- matrix(0,n.test,K)
@@ -73,7 +71,7 @@ for (i in 1:n) {
   # the ancestral population of origin.
   k              <- sample(1:K,size = 1,prob = p.deme)
   q.train[i,k]   <- 1
-  geno.train[i,] <- rep(sample.genotypes(f,q.train[i,]),each = nrep)
+  geno.train[i,] <- sample.genotypes(f,q.train[i,])
 }
 
 # Generate the test samples.
@@ -83,7 +81,7 @@ for (i in 1:n.test) {
   # Randomly sample the admixture proportions,
   k             <- sample(1:K,size = k.test[i],prob = p.deme)
   q.test[i,k]   <- 1/length(k)
-  geno.test[i,] <- rep(sample.genotypes(f,q.test[i,]),each = nrep)
+  geno.test[i,] <- sample.genotypes(f,q.test[i,])
 }
 rm(i,k)
 
@@ -104,6 +102,8 @@ rm(r)
 # Relabel the ancestral populations so that the admixture proportions
 # best coincide with the ground-truth admixture proportions.
 # TO DO.
+
+stop()
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
