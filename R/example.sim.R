@@ -1,5 +1,6 @@
 # Compare estimation of admixture proportions, with and without the L0
-# penalty term, in simulated genotype data.
+# penalty term, in simulated genotype data. In this case, all the
+# samples are unlabeled.
 library(parallel)
 library(bayesm)
 source("misc.R")
@@ -16,7 +17,7 @@ n        <- 500   # Number of samples.
 e        <- 0.01  # Probability of genotype error.
 a        <- 1e-3  # Strength of L0-penalty.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 2     # Number of CPUs to use.
+mc.cores <- 20    # Number of CPUs to use.
 
 # Specifies the amount of genetic drift for each population. For
 # details on the relationship between this parameter and population
@@ -37,8 +38,8 @@ set.seed(seed)
 # --------------------------
 # Load the allele frequencies estimated from the HGDP data.
 cat("Loading allele frequency data.\n")
-af <- read.table("/DNAData2/peter/ethnicity/hgdp/hgdp.af.txt",sep = " ",
-                 header = TRUE,stringsAsFactors = FALSE)$f1
+af <- read.table("../data/hgdp.txt",sep = " ",stringsAsFactors = FALSE,
+                 header = TRUE)$f1
 
 # Randomly select a subset of the allele frequencies >5%; these are
 # the allele frequencies of all loci in the ancestral population (af =
@@ -73,13 +74,13 @@ rm(r,markers)
 # ------------------------------------
 cat("Fitting admixture model to data.\n")
 r <- system.time(out.em <-
-       admixture.em(sim.data$geno,K,e = e,a = 0,max.iter = 1e4,cg = TRUE,
-                    tolerance = 5e-4,mc.cores = mc.cores))
+       admixture.em(sim.data$geno,K,e = e,a = 0,cg = TRUE,tolerance = 0.0005,
+                    mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
 rm(r)
 
-# Reorder the columns so that they best match the ground-truth
-# admixture proportions.
+# Reorder the columns (ancestral populations) so that they best match
+# the ground-truth admixture proportions.
 cols <- rep(NA,K)
 for (i in 1:K)
   cols[i] <- which.min(colSums(abs(out.em$Q - sim.data$Q[,i])))
@@ -92,8 +93,8 @@ rm(cols,i)
 # -------------------------------------------------
 cat("Fitting L0-penalized admixture model to data.\n")
 r <- system.time(out.sparse <- 
-       admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,max.iter = 1e4,
-                    tolerance = 5e-4,mc.cores = mc.cores,cg = TRUE,T = T,
+       admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
+                    tolerance = 0.0005,mc.cores = mc.cores,cg = TRUE,
                     Q = out.em$Q,F = out.em$F))
 cat(sprintf("Computation took %0.1f min.\n\n",r["elapsed"]/60))
 rm(r)
@@ -106,7 +107,7 @@ cat("Number of contributing ancestral populations (>1%):\n")
 r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
            summary(factor(rowSums(out.em$Q > 0.01),1:K)),
            summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
-rownames(r) <- c("true","EM","EM+L0")
+rownames(r) <- c("true","ML","L0")
 print(r)
 cat("\n")
 
@@ -116,15 +117,7 @@ cat("Error in estimated admixture proportions:\n")
 r <- rbind(quantile(rowSums(abs(sim.data$Q - out.em$Q)/2),seq(0,1,0.1)),
            quantile(rowSums(abs(sim.data$Q - out.sparse$Q)/2),seq(0,1,0.1)))
 r <- round(r,digits = 3)
-rownames(r) <- c("EM","EM+L0")
+rownames(r) <- c("ML","L0")
 print(r)
 cat("\n")
 rm(r)
-
-# SAVE EXPERIMENTAL OUTCOMES TO FILE
-# ----------------------------------
-cat("Saving results to .RData file.\n")
-save(list = c("a","d","e","T","seed","af","f","sim.data",
-              "out.em","out.sparse"),
-     file = "out.example.sim.RData")
-
