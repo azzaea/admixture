@@ -101,6 +101,17 @@ rm(r)
 
 # SUMMARIZE ACCURACY OF ADMIXTURE ESTIMATES
 # -----------------------------------------
+# Create a table summarizing the error in the estimated admixture
+# proportions.
+cat("Overlap between estimated and ground-truth admixture proportions:\n")
+bins <- c(seq(0,0.8,0.1),0.85,0.9,0.95,1)
+r <- rbind(table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins)),
+           table(cut(rowSums(pmin(sim.data$Q,out.sparse$Q)),bins)))
+rownames(r) <- c("ML","L0")
+colnames(r) <- bins[-length(bins)]
+print(r)
+cat("\n")
+
 # Print a table summarizing the number of contributing ancestral
 # populations (>1%).
 cat("Number of contributing ancestral populations (>1%):\n")
@@ -109,15 +120,3 @@ r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
            summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
 rownames(r) <- c("true","ML","L0")
 print(r)
-cat("\n")
-
-# Create a table summarizing the error in the estimated admixture
-# proportions, as measured by total variation distance.
-cat("Error in estimated admixture proportions:\n")
-r <- rbind(quantile(rowSums(abs(sim.data$Q - out.em$Q)/2),seq(0,1,0.1)),
-           quantile(rowSums(abs(sim.data$Q - out.sparse$Q)/2),seq(0,1,0.1)))
-r <- round(r,digits = 3)
-rownames(r) <- c("ML","L0")
-print(r)
-cat("\n")
-rm(r)
