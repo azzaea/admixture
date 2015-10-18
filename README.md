@@ -1,11 +1,30 @@
+Put an example here of admixture in HGDP data.
+
 admixture
 =========
+
+A simple EM implementation of the
+[ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
+R, plus a couple of extensions.
 
 *Give overview of admixture repository here.*
 
 *Items*:
+- Show figure from running this on the simulated data.
+- Show figure from running this on the HGDP data.
+- Pros and cons of ADMIXTURE software and this R package.
 - Tested using R version 3.2.2.
 - Authorship.
+
+![Alt text](example-sim-error.gif)
+
+### Getting started
+
+*Text goes here.*
+
+### Overview of the R files in this repository
+
+*Details go here.*
 
 ### Output from running example.admixture.R
 
