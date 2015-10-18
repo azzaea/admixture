@@ -10,10 +10,18 @@ R, plus a couple of extensions.
 *Give overview of admixture repository here.*
 
 *Items*:
+
 - Show figure from running this on the simulated data.
+
 - Show figure from running this on the HGDP data.
+
 - Pros and cons of ADMIXTURE software and this R package.
+
+- We have a procedure for choosing the L0-penalty strength via
+  cross-validation, but it isn't demonstrated yet in the R scripts.
+
 - Tested using R version 3.2.2.
+
 - Authorship.
 
 ![Alt text](example-sim-error.gif)
