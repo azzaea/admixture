@@ -9,8 +9,8 @@ R, plus extensions.*
 
 ADMIXTURE is widely used to estimate population structure from
 genotype data in part because the computation scales well to
-whole-genome genotype data. The 1,000,000+ people who have taken
-the AncestryDNA test have all received their [ethnicity
+whole-genome genotype data. For example, the 1,000,000+ people who
+have taken the AncestryDNA test have all received their [ethnicity
 estimate](http://dna.ancestry.com/resource/whitePaper/AncestryDNA-Ethnicity-White-Paper)
 from ADMIXTURE.
 
@@ -19,13 +19,13 @@ that computes maximum-likelihood estimates of the admixture
 proportions and population allele frequencies using the expectation
 maximization (EM) algorithm. EM typically converges more slowly to the
 solution than quasi-Newton methods (which is how ADMIXTURE achieves
-better computational performance). However, the hope is that this
-simple implementation, and the release of the source code, will
-facilitate development of extensions to ADMIXTURE. One extension we
-have developed here is a modification to the optimization (M-step)
-that encourages *sparse* admixture estimates.
+excellent performance). However, the hope is that this simple
+implementation, and the release of the source code, will facilitate
+development of extensions to ADMIXTURE. One extension we have
+developed here is a modification to the optimization (M-step) that
+encourages *sparse* admixture estimates.
 
-The code contained in this repository was tested using R version 3.2.2.
+This code was tested using R version 3.2.2.
 
 The admixture source code repository is free software: you can
 redistribute it under the terms of the **MIT license**. All the files
@@ -35,8 +35,8 @@ even the implied warranty of **merchantability or fitness for a
 particular purpose**. See file [LICENSE](LICENSE) for the full text of
 the license.
 
-[Peter Carbonetto](http://www.cs.ubc.ca/spider/pcarbo)
-[AncestryDNA](http://dna.ancestry.com)
+[Peter Carbonetto](http://www.cs.ubc.ca/spider/pcarbo)<br>
+[AncestryDNA](http://dna.ancestry.com)<br>
 San Francisco, California
 
 ### Getting started
