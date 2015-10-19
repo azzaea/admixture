@@ -7,18 +7,22 @@ A simple EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
 R, plus extensions.
 
-*Give overview of admixture repository here.*
+- Intro: The ADMIXTURE software is widely used for population genetics
+  research, and even is used for the >1,000,000 individuals that have
+  taken the AncestryDNA test, because it efficiently computes
+  admixture estimates from large-scale genotype data. 
 
-*Items*:
+- Pros and cons of ADMIXTURE software and this R package: facilitates
+  development of extensions, including the one we have developed that
+  encourages *sparse* admixture estimates (pro); the motivation for
+  developing a quasi-Newton optimization algorithm is that the much
+  simpler EM implementation often converges more slowly to the
+  solution (con);
 
-- Show figure from running this on the simulated data.
-
-- Show figure from running this on the HGDP data.
-
-- Pros and cons of ADMIXTURE software and this R package.
+- Explain why I didn't develop this as a package.
 
 - We have a procedure for choosing the L0-penalty strength via
-  cross-validation, but it isn't demonstrated yet in the R scripts.
+cross-validation, but it isn't demonstrated yet in the R scripts.
 
 - Tested using R version 3.2.2.
 
@@ -28,9 +32,23 @@ R, plus extensions.
 
 ### Getting started
 
-*Text goes here.*
+First, build the the shared object (.so) files using the following
+commands:
 
+    R CMD SHLIB mcmc.c
+    R CMD SHLIB admixture.c
+
+I've written two scripts that demonstrate usage of the algorithm.
+
+Script **example.admixture.R** uses the EM algorithm to predict
+admixture proportions when we have a reference set of labeled,
+single-origin samples.
+	
 ### Overview of the R files in this repository
+
+*Details go here.*
+
+### The admixture.em function.
 
 *Details go here.*
 
