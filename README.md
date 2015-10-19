@@ -3,9 +3,9 @@
 
 # admixture
 
-A simple EM implementation of the
+**A simple EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
-R, plus extensions.
+R, plus extensions.**
 
 - Intro: The ADMIXTURE software is widely used for population genetics
   research, and even is used for the >1,000,000 individuals that have
@@ -19,16 +19,24 @@ R, plus extensions.
   simpler EM implementation often converges more slowly to the
   solution (con);
 
-- Explain why I didn't develop this as a package.
+- Explain why I didn't develop this as an R package.
 
 - We have a procedure for choosing the L0-penalty strength via
 cross-validation, but it isn't demonstrated yet in the R scripts.
 
 - Tested using R version 3.2.2.
 
-- Authorship.
+The admixture source code repository is free software: you can
+redistribute it under the terms of the **MIT license**. All the files
+in this project are part of varbvs. This project is distributed in the
+hope that it will be useful, but **without any warranty**; without
+even the implied warranty of **merchantability or fitness for a
+particular purpose**. See file [LICENSE](LICENSE) for the full text of
+the license.
 
-![Admixture estimates in simulated genotype data](example-sim-error.gif)
+[Peter Carbonetto](http://www.cs.ubc.ca/spider/pcarbo)
+[AncestryDNA](http://dna.ancestry.com)
+San Francisco, California
 
 ### Getting started
 
@@ -43,12 +51,67 @@ I've written two scripts that demonstrate usage of the algorithm.
 Script **example.admixture.R** uses the EM algorithm to predict
 admixture proportions when we have a reference set of labeled,
 single-origin samples.
-	
-### Overview of the R files in this repository
 
-*Details go here.*
+![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
 ### The admixture.em function.
+
+Estimate population-specific allele frequencies and admixture
+proportions in unlabeled samples from genotypes.
+
+**Usage:**
+
+    admixture.em(X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
+    			 tolerance = 1e-4, max.iter = 1000, exact.q = FALSE,	
+                 cg = FALSE,mc.cores = 1, verbose = TRUE, T = 1)
+
+**Arguments:**
+				 
+The non-optional inputs are as follows:
+
+   X   n x p genotype matrix, where n is the number of
+       samples and p is the number of markers;
+
+   K   number of ancestral populations;
+
+   z   vector giving the population of origin for each of the samples
+       (an integer between 1 and K), or NA if the sample is unlabeled.
+       If set to NULL, or not specified, all samples are unlabeled.
+
+The return value is a list with two list elements: F, the p x k
+matrix of population-specific allele frequency estimates; and Q, the
+n x k matrix of estimated admixture proportions, in which each row
+of Q sums to 1. For labeled samples, the admixture proportions are
+Q[i,k] = 1 when z[i] = k, otherwise all the other entries are
+exactly zero.
+
+There are two variations to the M-step update for the Q matrix. When
+the number of ancestral populations is small (k < 20), it is
+feasible to compute the L0-penalized estimate exactly by
+exhaustively calculating the posterior probability for each possible
+choice of the nonzero admixture proportions. Setting exact.q = TRUE
+will activate this option. However, for larger k, it is not feasible
+to compute the exact solution because the number of ways of choosing
+nonzero admixture proportions is too large. Instead, setting exact.q
+= FALSE computes an approximate solution using a simulated annealing
+algorithm. In this case, it is necessary to set input T. For an
+explanation of input T, see function update.q.sparse.approx.
+
+The cg parameter specifies the M-step update for the F matrix. When
+cg = FALSE, the binomial success rates are updated using the
+standard M-step solution that is derived by finding the roots of the
+partial derivatives of the expected complete log-likelihood. When cg
+= TRUE, the standard M-step update is adjusted using the conjugate
+gradient algorithm (specifically, using the Hestenes-Stiefel update
+formula). In some cases, I've found that the conjugate gradient
+upgrade can lead to improvements in the convergence rate of the EM
+iterates.
+
+**Value:**
+
+*Details about output go here.*
+
+### Overview of the R files in this repository
 
 *Details go here.*
 

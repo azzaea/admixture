@@ -339,8 +339,9 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 }
 
 # ----------------------------------------------------------------------
-# Estimate population-specific allele frequencies in unlabeled,
-# admixed samples. The non-optional inputs are as follows:
+# Estimate population-specific allele frequencies and admixture
+# proportions in unlabeled samples from genotypes. The non-optional
+# inputs are as follows:
 #
 #   X   n x p genotype matrix, where n is the number of
 #       samples and p is the number of markers;
