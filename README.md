@@ -1,11 +1,11 @@
-Put an example here of admixture in HGDP data.
+![Admixture estimates in Human Genome Diversity Panel with K = 7
+  ancestral populations](hgdp.gif)
 
-admixture
-=========
+# admixture
 
 A simple EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
-R, plus a couple of extensions.
+R, plus extensions.
 
 *Give overview of admixture repository here.*
 
@@ -24,7 +24,7 @@ R, plus a couple of extensions.
 
 - Authorship.
 
-![Alt text](example-sim-error.gif)
+![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
 ### Getting started
 
