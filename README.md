@@ -101,6 +101,33 @@ allele frequencies and admixture proportions, respectively. If these
 inputs aren't specified, these model parameters are randomly
 initialized. For more details on F and Q, see below.
 
+Input **tolerance** specifies the convergence tolerance of the EM
+iterates. Convergence is reached when the maximum absolute difference
+between the parameters at two successive iterations is less than the
+specified tolerance. Input **max.iter** specifies the maximum number
+of EM iterations.
+
+There are two variations to the M-step update for Q. When the number
+of ancestral populations is small (K < 20), it is feasible to compute
+the L0-penalized estimate exactly by exhaustively calculating the
+posterior probability for each possible choice of nonzero admixture
+proportions. Setting **exact.q = TRUE** will activate this
+option. However, for larger K, it is not feasible to compute the exact
+solution because the number of ways of choosing nonzero admixture
+proportions is too large. Instead, setting **exact.q = FALSE**
+computes an approximate solution using simulated annealing. In this
+case, it is necessary to set input **T**. For an explanation of T, see
+function **update.q.sparse.approx**.
+
+The **cg** parameter controls the M-step update for the F matrix. When
+cg = FALSE, the binomial success rates are updated using the standard
+M-step solution. When cg = TRUE, the standard M-step update is
+adjusted using the conjugate gradient algorithm with the the
+Hestenes-Stiefel update formula. In some cases, I've found that this
+yields a modest improvement to convergence of the EM iterates.
+
+#### Value
+
 The return value is a list with two list elements: F, the p x k
 matrix of population-specific allele frequency estimates; and Q, the
 n x k matrix of estimated admixture proportions, in which each row
@@ -108,37 +135,7 @@ of Q sums to 1. For labeled samples, the admixture proportions are
 Q[i,k] = 1 when z[i] = k, otherwise all the other entries are
 exactly zero.
 
-There are two variations to the M-step update for the Q matrix. When
-the number of ancestral populations is small (k < 20), it is
-feasible to compute the L0-penalized estimate exactly by
-exhaustively calculating the posterior probability for each possible
-choice of the nonzero admixture proportions. Setting exact.q = TRUE
-will activate this option. However, for larger k, it is not feasible
-to compute the exact solution because the number of ways of choosing
-nonzero admixture proportions is too large. Instead, setting exact.q
-= FALSE computes an approximate solution using a simulated annealing
-algorithm. In this case, it is necessary to set input T. For an
-explanation of input T, see function update.q.sparse.approx.
-
-The cg parameter specifies the M-step update for the F matrix. When
-cg = FALSE, the binomial success rates are updated using the
-standard M-step solution that is derived by finding the roots of the
-partial derivatives of the expected complete log-likelihood. When cg
-= TRUE, the standard M-step update is adjusted using the conjugate
-gradient algorithm (specifically, using the Hestenes-Stiefel update
-formula). In some cases, I've found that the conjugate gradient
-upgrade can lead to improvements in the convergence rate of the EM
-iterates.
-
-#### Value
-
-*Details about output go here.*
-
-### Overview of the R files in this repository
-
-*Details go here.*
-
-### Output from running example.admixture.R
+### Sample output from running example.admixture.R
 
 The R console output should look something like this:
 
@@ -177,7 +174,7 @@ The R console output should look something like this:
 	   2  0 81 19  0  0
 	   4  1  2 35 47 15
 
-### Output from running example.sim.R
+### Sample output from running example.sim.R
 
 The R console output should look something like this:
 
