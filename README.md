@@ -1,7 +1,7 @@
 ![Admixture estimates in Human Genome Diversity Panel with K = 7
   ancestral populations](hgdp.gif)
 
-## admixture
+# admixture
 
 *A simple EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
@@ -47,11 +47,16 @@ commands:
     R CMD SHLIB mcmc.c
     R CMD SHLIB admixture.c
 
-I've written two scripts that demonstrate usage of the algorithm.
+I have written two scripts to demonstrate usage of the EM algorithm.
 
 Script **example.admixture.R** uses the EM algorithm to predict
 admixture proportions when we have a reference set of labeled,
-single-origin samples.
+single-origin individuals.
+
+Script **example.sim.R** evaluates accuracy of the admixture estimates
+in simulated genotype data, with and without the L0-penalty term that
+encourages sparsity in the admixture proportions. In this example, all
+the samples are unlabeled.
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
