@@ -128,12 +128,16 @@ yields a modest improvement to convergence of the EM iterates.
 
 #### Value
 
-The return value is a list with two list elements: F, the p x k
-matrix of population-specific allele frequency estimates; and Q, the
-n x k matrix of estimated admixture proportions, in which each row
-of Q sums to 1. For labeled samples, the admixture proportions are
-Q[i,k] = 1 when z[i] = k, otherwise all the other entries are
-exactly zero.
+The return value is a list with two list elements:
+
+**F**, the p x K matrix of population-specific allele frequency
+estimates, where p is the number of genetic markers and K is the
+number of ancestral populations;
+
+**Q**, the n x K matrix of admixture proportions, where n is the
+number of individuals (samples). For labeled samples, the admixture
+proportions are Q[i,k] = 1 when z[i] = k, otherwise all the other
+entries are exactly 0.
 
 ### Sample output from running example.admixture.R
 
