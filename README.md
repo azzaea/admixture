@@ -87,7 +87,8 @@ unlabeled. If z is set to NULL, or is not specified, all samples are
 treated as unlabeled.
 
 Input **e** specifies the probably of a genotype error. It must be a
-positive number, but can be small (e.g., 1e-6).
+positive number. It can be small (e.g., 1e-6), but note that small
+values severely affect convergence of the EM algorithm.
 
 Input **a** specifies the strength of the L0-penalty term that
 encourages sparsity in the admixture estimates. By default, a = 0,
