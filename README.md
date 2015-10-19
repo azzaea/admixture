@@ -41,17 +41,17 @@ San Francisco, California
 
 ### Getting started
 
-First, build the the shared object (.so) files using the following
-commands:
+Before using any of the functions in R, build the the shared object
+(.so) files with the following commands:
 
     R CMD SHLIB mcmc.c
     R CMD SHLIB admixture.c
 
 I have written two scripts to demonstrate usage of the EM algorithm.
 
-Script **example.admixture.R** uses the EM algorithm to predict
-admixture proportions when we have a reference set of labeled,
-single-origin individuals.
+Script **example.admixture.R** uses the EM algorithm
+(**admixture.em**) to predict admixture proportions when we have a
+reference set of labeled, single-origin individuals.
 
 Script **example.sim.R** evaluates accuracy of the admixture estimates
 in simulated genotype data, with and without the L0-penalty term that
@@ -62,8 +62,8 @@ the samples are unlabeled.
 
 ### The admixture.em function
 
-Estimate population allele frequencies and admixture proportions in
-unlabeled samples from their genotypes.
+Estimate admixture proportions in unlabeled samples from their
+genotypes.
 
 #### Usage
 
@@ -73,16 +73,33 @@ unlabeled samples from their genotypes.
 
 #### Arguments
 				 
-The non-optional inputs are as follows:
+Input **X** is an n x p genotype matrix, where n is the number of
+samples and p is the number of biallic genetic markers. Genotypes are
+represented as allele counts, so all entries must be 0, 1 or
+2. Missing values (NA) are also allowed.
 
-   X   n x p genotype matrix, where n is the number of
-       samples and p is the number of markers;
+Input **K** is a model parameter specifying the number of ancestral
+populations.
 
-   K   number of ancestral populations;
+Input **z** is a vector giving the population of origin (an integer between 1
+and K) for each of the samples, or NA is the sample is unlabeled. If
+set to NULL, or not specified, all samples are treated as unlabeled.
 
-   z   vector giving the population of origin for each of the samples
-       (an integer between 1 and K), or NA if the sample is unlabeled.
-       If set to NULL, or not specified, all samples are unlabeled.
+Input **e** specifies the probably of a genotype error. It must be a
+positive number, but can be small (e.g. 1e-6).
+
+Input **a** specifies the strength of the L0-penalty term that encourages
+sparsity in the admixture estimates. By default, a = 0, which means
+that the L0-penalty term has no effect, and the maximum-likelihood
+estimate is returned. I have implemented a procedure for choosing the
+L0-penalty strength using cross-validation, but this procedure isn't
+yet demonstrated yet in this code. For some information on this, see
+function **calc.geno.error.R**.
+
+Inputs **F** and **Q** are the initial estimates of the population
+allele frequencies and admixture proportions, respectively. If these
+inputs aren't specified, these model parameters are randomly
+initialized. For more details on F and Q, see below.
 
 The return value is a list with two list elements: F, the p x k
 matrix of population-specific allele frequency estimates; and Q, the
@@ -112,10 +129,6 @@ gradient algorithm (specifically, using the Hestenes-Stiefel update
 formula). In some cases, I've found that the conjugate gradient
 upgrade can lead to improvements in the convergence rate of the EM
 iterates.
-
-- We have a procedure for choosing the L0-penalty strength via
-cross-validation, but it isn't demonstrated yet in the R scripts. For
-some details, see unction **calc.geno.error.R**.
 
 #### Value
 

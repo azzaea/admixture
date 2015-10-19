@@ -18,7 +18,7 @@ prop.na  <- 0.01  # Proportion of genotypes that are missing.
 e        <- 0.01  # Probability of genotype error.
 a        <- 3e-3  # L0-penalty strength.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 20    # Number of CPUs to use.
+mc.cores <- 2     # Number of CPUs to use.
 
 # A vector that specifies, for each test individual, the number of
 # populations contributing to the individual's genome.
