@@ -1,16 +1,18 @@
 ![Admixture estimates in Human Genome Diversity Panel with K = 7
   ancestral populations](hgdp.gif)
 
-# admixture
+## admixture
 
-**A simple EM implementation of the
+*A simple EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
-R, plus extensions.**
+R, plus extensions.*
 
-- Intro: The ADMIXTURE software is widely used for population genetics
-  research, and even is used for the >1,000,000 individuals that have
-  taken the AncestryDNA test, because it efficiently computes
-  admixture estimates from large-scale genotype data. 
+ADMIXTURE is widely used to estimate population structure from
+genotype data in part because the computation scales well to
+whole-genome genotype data. The 1,000,000+ customers who have taken
+the AncestryDNA test have all received their [ethnicity
+estimate](http://dna.ancestry.com/resource/whitePaper/AncestryDNA-Ethnicity-White-Paper)
+from ADMIXTURE.
 
 - Pros and cons of ADMIXTURE software and this R package: facilitates
   development of extensions, including the one we have developed that
@@ -22,7 +24,8 @@ R, plus extensions.**
 - Explain why I didn't develop this as an R package.
 
 - We have a procedure for choosing the L0-penalty strength via
-cross-validation, but it isn't demonstrated yet in the R scripts.
+cross-validation, but it isn't demonstrated yet in the R scripts. For
+some details, see unction **calc.geno.error.R**.
 
 - Tested using R version 3.2.2.
 
@@ -54,18 +57,18 @@ single-origin samples.
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
-### The admixture.em function.
+### The admixture.em function
 
 Estimate population-specific allele frequencies and admixture
 proportions in unlabeled samples from genotypes.
 
-**Usage:**
+#### Usage
 
     admixture.em(X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
     			 tolerance = 1e-4, max.iter = 1000, exact.q = FALSE,	
                  cg = FALSE,mc.cores = 1, verbose = TRUE, T = 1)
 
-**Arguments:**
+#### Arguments
 				 
 The non-optional inputs are as follows:
 
@@ -107,7 +110,7 @@ formula). In some cases, I've found that the conjugate gradient
 upgrade can lead to improvements in the convergence rate of the EM
 iterates.
 
-**Value:**
+#### Value
 
 *Details about output go here.*
 

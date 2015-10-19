@@ -167,7 +167,7 @@ update.q.sparse.approx.mc <- function (M, x0, a, T, u, mc.cores = 2) {
   # Assign each sample to a CPU, and compute admixture proportion
   # estimates for each set of samples.
   rows <- distribute(1:nrow(M),mc.cores)
-  out  <- mclapply(rows,function(i) update.q.sparse.approx(M[i,],x0[i,],a,T,u),
+  out  <- mclapply(rows,function(i)update.q.sparse.approx(M[i,],x0[i,],a,T,u),
                    mc.cores = mc.cores)
 
   # Aggregate the outputs from the individual CPUs.
