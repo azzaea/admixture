@@ -9,25 +9,23 @@ R, plus extensions.*
 
 ADMIXTURE is widely used to estimate population structure from
 genotype data in part because the computation scales well to
-whole-genome genotype data. The 1,000,000+ customers who have taken
+whole-genome genotype data. The 1,000,000+ people who have taken
 the AncestryDNA test have all received their [ethnicity
 estimate](http://dna.ancestry.com/resource/whitePaper/AncestryDNA-Ethnicity-White-Paper)
 from ADMIXTURE.
 
-- Pros and cons of ADMIXTURE software and this R package: facilitates
-  development of extensions, including the one we have developed that
-  encourages *sparse* admixture estimates (pro); the motivation for
-  developing a quasi-Newton optimization algorithm is that the much
-  simpler EM implementation often converges more slowly to the
-  solution (con);
+I have developed a simple, alternative implementation of ADMIXTURE
+that computes maximum-likelihood estimates of the admixture
+proportions and population allele frequencies using the expectation
+maximization (EM) algorithm. EM typically converges more slowly to the
+solution than quasi-Newton methods (which is how ADMIXTURE achieves
+better computational performance). However, the hope is that this
+simple implementation, and the release of the source code, will
+facilitate development of extensions to ADMIXTURE. One extension we
+have developed here is a modification to the optimization (M-step)
+that encourages *sparse* admixture estimates.
 
-- Explain why I didn't develop this as an R package.
-
-- We have a procedure for choosing the L0-penalty strength via
-cross-validation, but it isn't demonstrated yet in the R scripts. For
-some details, see unction **calc.geno.error.R**.
-
-- Tested using R version 3.2.2.
+The code contained in this repository was tested using R version 3.2.2.
 
 The admixture source code repository is free software: you can
 redistribute it under the terms of the **MIT license**. All the files
@@ -59,8 +57,8 @@ single-origin samples.
 
 ### The admixture.em function
 
-Estimate population-specific allele frequencies and admixture
-proportions in unlabeled samples from genotypes.
+Estimate population allele frequencies and admixture proportions in
+unlabeled samples from their genotypes.
 
 #### Usage
 
@@ -109,6 +107,10 @@ gradient algorithm (specifically, using the Hestenes-Stiefel update
 formula). In some cases, I've found that the conjugate gradient
 upgrade can lead to improvements in the convergence rate of the EM
 iterates.
+
+- We have a procedure for choosing the L0-penalty strength via
+cross-validation, but it isn't demonstrated yet in the R scripts. For
+some details, see unction **calc.geno.error.R**.
 
 #### Value
 
