@@ -57,7 +57,8 @@ f <- sample.af(af,d)
 # GENERATE DATA SET
 # -----------------
 # In this data set, all individuals are either single-origin (one
-# contributing population), or admixed between exactly populations.
+# contributing population), or admixed between exactly two
+# populations.
 cat("Generating data.\n")
 K        <- length(d)
 Q        <- sample.admix.2way(n,K)

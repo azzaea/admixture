@@ -7,10 +7,12 @@
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
 R, plus extensions.*
 
-ADMIXTURE is widely used to estimate population structure from
-genotype data in part because the computation scales well to
-whole-genome genotype data. For example, the 1,000,000+ people who
-have taken the AncestryDNA test have all received their [ethnicity
+The ADMIXTURE
+[software](https://www.genetics.ucla.edu/software/admixture/) is
+widely used to estimate population structure from genotype data in
+part because the computation scales well to whole-genome genotype
+data. For example, the million+ people who have taken the AncestryDNA
+test have all received their [ethnicity
 estimate](http://dna.ancestry.com/resource/whitePaper/AncestryDNA-Ethnicity-White-Paper)
 from ADMIXTURE.
 
@@ -18,12 +20,14 @@ I have developed a simple, alternative implementation of ADMIXTURE
 that computes maximum-likelihood estimates of the admixture
 proportions and population allele frequencies using the expectation
 maximization (EM) algorithm. EM typically converges more slowly to the
-solution than quasi-Newton methods (which is how ADMIXTURE achieves
-excellent performance). However, the hope is that this simple
-implementation, and the release of the source code, will facilitate
-development of extensions to ADMIXTURE. One extension I have developed
-here is a modification to the optimization (M-step) that encourages
-*sparse* admixture estimates.
+solution than quasi-Newton methods, which is how ADMIXTURE achieves
+excellent performance. (Note that I've modified the ADMIXTURE model to
+handle genotype errors, and this seems to improve convergence of EM to
+some extent.) The hope is that this very simple implementation, and
+the release of the source code, will facilitate development of
+extensions to ADMIXTURE. One extension I have developed here is a
+modification to the optimization (M-step) that encourages *sparse*
+admixture estimates.
 
 This code was tested using R version 3.2.2.
 
