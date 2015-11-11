@@ -1,4 +1,5 @@
-# TO DO: Explain here what this script does.
+# Demonstration of the "bare bones" implementation of the EM
+# algorithm.
 library(bayesm)
 source("misc.R")
 source("sim.data.R")
@@ -9,9 +10,9 @@ source("admixture.barebones.R")
 # genotype error (e), and the amount of genetic drift for each of the
 # K populations (d).
 p <- 100
-n <- 300
+n <- 150
 e <- 0.01
-d <- rep(0.1,3)
+d <- rep(0.15,3)
 
 # Initialize the random number generator.
 set.seed(1)

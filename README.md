@@ -20,19 +20,18 @@ I have developed a simple, alternative implementation of ADMIXTURE
 that computes maximum-likelihood estimates of the admixture
 proportions and population allele frequencies using the expectation
 maximization (EM) algorithm. (See
-[admixture.barebones.R](admixture.barebones.R) and
-[admixture.barebones.demo.R](admixture.barebones.demo.R) for a "bare
-bones" implementation of the EM algorithm that actually works, albeit
-very slowly!)
+[admixture.barebones.R](R/admixture.barebones.R) and
+[admixture.barebones.demo.R](R/admixture.barebones.demo.R) for a "bare
+bones" implementation that actually works, albeit very slowly!)
 
-EM typically has poor convergence to the solution, hence the reason
-why ADMIXTURE software uses quasi-Newton methods instead. (Note that
-I've modified the ADMIXTURE model to handle genotype errors, and this
-seems to improve convergence of EM to some extent.) The hope is that
-this very simple implementation, and the release of the source code,
-will facilitate development of extensions to ADMIXTURE. One extension
-I have developed here is a modification to the optimization (M-step)
-that encourages *sparse* admixture estimates.
+EM typically has poor convergence, so the ADMIXTURE software is based
+quasi-Newton methods instead for better convergence. I've modified the
+ADMIXTURE model to allow for genotype errors, and this seems to
+improve convergence of EM to some extent. The hope is that this very
+simple implementation will facilitate development of extensions to
+ADMIXTURE. One extension I have developed here is a modification to
+the optimization (M-step) that encourages *sparse* admixture
+estimates.
 
 This code was tested using R version 3.2.2.
 
