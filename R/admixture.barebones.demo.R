@@ -1,5 +1,5 @@
-# Demonstration of the "bare bones" implementation of the EM
-# algorithm.
+# Demonstration of the very simple ("bare bones") but slow
+# implementation of the EM algorithm in a small data set.
 library(bayesm)
 source("misc.R")
 source("sim.data.R")
@@ -28,12 +28,11 @@ rm(af)
 # (one contributing population), or admixed between exactly two
 # populations.
 K    <- length(d)
-Q    <- sample.admix.2way(n,K)
-geno <- sample.genotype.matrix(f,Q)
-rm(Q)
+q    <- sample.admix.2way(n,K)
+geno <- sample.genotype.matrix(f,q)
 
-# Compute admixture estimates using the EM algorithm.
+# Compute admixture estimates using the EM algorithm. Compare the
+# estimated admixture proportions (out$Q) against the ground-truth
+# admixture proportions (q).
 out <- admixture.em.barebones(geno,K)
 
-# Reorder the columns so that the estimates best match the
-# ground-truth admixture proportions.

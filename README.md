@@ -21,27 +21,28 @@ that computes maximum-likelihood estimates of the admixture
 proportions and population allele frequencies using the expectation
 maximization (EM) algorithm. (See
 [admixture.barebones.R](R/admixture.barebones.R) and
-[admixture.barebones.demo.R](R/admixture.barebones.demo.R) for a "bare
-bones" implementation that actually works, albeit very slowly!)
+[admixture.barebones.demo.R](R/admixture.barebones.demo.R) for a
+extremely simple, or "bare bones", implementation that actually works,
+albeit slowly!)
 
-EM typically has poor convergence, so the ADMIXTURE software is based
-quasi-Newton methods instead for better convergence. I've modified the
-ADMIXTURE model to allow for genotype errors, and this seems to
-improve convergence of EM to some extent. The hope is that this very
-simple implementation will facilitate development of extensions to
-ADMIXTURE. One extension I have developed here is a modification to
-the optimization (M-step) that encourages *sparse* admixture
-estimates.
+The ADMIXTURE software is implemented using a quasi-Newton method, and
+will typically converge much more quickly to a solution than the EM
+algorithm. I've modified the model to allow for genotype errors, and
+this seems to help convergence to some extent. In any case, the hope
+is that this very simple implementation will facilitate development of
+extensions to ADMIXTURE. One extension I have developed here is a
+modification to the optimization (M-step) that encourages *sparse*
+admixture estimates.
 
 This code was tested using R version 3.2.2.
 
 The admixture source code repository is free software: you can
 redistribute it under the terms of the **MIT license**. All the files
-in this project are part of varbvs. This project is distributed in the
-hope that it will be useful, but **without any warranty**; without
-even the implied warranty of **merchantability or fitness for a
-particular purpose**. See file [LICENSE](LICENSE) for the full text of
-the license.
+in this project are part of **admixture**. This project is distributed
+in the hope that it will be useful, but **without any warranty**;
+without even the implied warranty of **merchantability or fitness for
+a particular purpose**. See file [LICENSE](LICENSE) for the full text
+of the license.
 
 [Peter Carbonetto](http://www.cs.ubc.ca/spider/pcarbo)<br>
 [AncestryDNA](http://dna.ancestry.com)<br>
