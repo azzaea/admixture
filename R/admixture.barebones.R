@@ -1,9 +1,12 @@
 # SUMMARY
 # -------
-# blah, blah, blah. Here is an overview of the functions defined in
-# this file:
+# Simple but slow ("bare bones") implementation of the EM algorithm
+# for fitting the ADMIXTURE model to genotype data. Here is an
+# overview of the functions defined in this file:
 #
-#   <function does here>
+#   genoprob(x,u,e)
+#   admixture.Estep.slow(X,F,Q,e)
+#   admixture.em.barebones(X,K,e,tolerance,max.iter)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------
@@ -16,7 +19,14 @@ genoprob <- function (x, u, e)
   (1-2*e) * (x == u) + e * (x != u)
 
 # ----------------------------------------------------------------------
-# TO DO: Describe this function here.
+# Compute the expected allele counts "n0" and "n1" and the expected
+# population counts "m", the sufficient statistics for updating the
+# population-specific allele frequencies and the admixture
+# proportions, respectively. Statistics n0 and n1 are stored in two p
+# x k matrices, where p is the number of markers and k is the number
+# of ancestral populations. The m counts are stored in an n x k
+# matrix, where n is the number of samples. See admixture.em.barebones
+# for an explanation of inputs F, Q and e.
 admixture.Estep.slow <- function (X, F, Q, e) {
 
   # This is a small constant added to counts to ensure that they are
@@ -86,7 +96,15 @@ admixture.Estep.slow <- function (X, F, Q, e) {
 }
 
 # ----------------------------------------------------------------------
-# TO DO: Describe function here.
+# Estimate population-specific allele frequencies and admixture
+# proportions in unlabeled samples from genotypes. The non-optional
+# inputs are: X, the n x p genotype matrix, where n is the number of
+# samples and p is the number of markers; K, the number of ancestral
+# populations. The return value is a list with two list elements: F,
+# the p x k matrix of population-specific allele frequency estimates;
+# and Q, the n x k matrix of estimated admixture proportions, in which
+# each row of Q sums to 1. Input e specifies the probability of a
+# genotype error.
 admixture.em.barebones <-
   function (X, K, e = 0.001, tolerance = 1e-4, max.iter = 1e3) {
 
