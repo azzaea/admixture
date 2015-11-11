@@ -19,15 +19,20 @@ from ADMIXTURE.
 I have developed a simple, alternative implementation of ADMIXTURE
 that computes maximum-likelihood estimates of the admixture
 proportions and population allele frequencies using the expectation
-maximization (EM) algorithm. EM typically converges more slowly to the
-solution than quasi-Newton methods, which is how ADMIXTURE achieves
-excellent performance. (Note that I've modified the ADMIXTURE model to
-handle genotype errors, and this seems to improve convergence of EM to
-some extent.) The hope is that this very simple implementation, and
-the release of the source code, will facilitate development of
-extensions to ADMIXTURE. One extension I have developed here is a
-modification to the optimization (M-step) that encourages *sparse*
-admixture estimates.
+maximization (EM) algorithm. (See
+[admixture.barebones.R](admixture.barebones.R) and
+[admixture.barebones.demo.R](admixture.barebones.demo.R) for a "bare
+bones" implementation of the EM algorithm that actually works, albeit
+very slowly!)
+
+EM typically has poor convergence to the solution, hence the reason
+why ADMIXTURE software uses quasi-Newton methods instead. (Note that
+I've modified the ADMIXTURE model to handle genotype errors, and this
+seems to improve convergence of EM to some extent.) The hope is that
+this very simple implementation, and the release of the source code,
+will facilitate development of extensions to ADMIXTURE. One extension
+I have developed here is a modification to the optimization (M-step)
+that encourages *sparse* admixture estimates.
 
 This code was tested using R version 3.2.2.
 
@@ -92,15 +97,15 @@ treated as unlabeled.
 
 Input **e** specifies the probably of a genotype error. It must be a
 positive number. It can be small (e.g., 1e-6), but note that small
-values severely affect convergence of the EM algorithm.
+values tend to increase convergence time of the EM algorithm.
 
 Input **a** specifies the strength of the L0-penalty term that
 encourages sparsity in the admixture estimates. By default, a = 0,
 which means that the L0-penalty term has no effect, and the
 maximum-likelihood estimate is returned. I have implemented a
 procedure for choosing the L0-penalty strength using cross-validation,
-but this procedure isn't yet demonstrated yet in this code. For some
-information on this cross-validation, see function
+but this procedure isn't demonstrated yet in this code. For some
+details on this cross-validation, see function
 **calc.geno.error.R**.
 
 Inputs **F** and **Q** are the initial estimates of the population
@@ -115,37 +120,37 @@ than the specified tolerance. Input **max.iter** specifies the maximum
 number of EM iterations.
 
 There are two variations to the M-step update for Q. When the number
-of ancestral populations is small (K < 20), it is feasible to compute
-the optimal solution exactly by exhaustively calculating the posterior
-probability for each possible choice of nonzero admixture proportions.
-Setting **exact.q = TRUE** activates this option. However, for larger
-K, it is not feasible to compute the exact solution because the number
-of ways of choosing nonzero admixture proportions is too
-large. Instead, setting **exact.q = FALSE** computes an approximate
-solution using simulated annealing. In this case, it is necessary to
-set input **T**. For an explanation of T, see function
-**update.q.sparse.approx**.
+of ancestral populations is small (e.g., K < 20), it is feasible to
+compute the optimal solution exactly by exhaustively calculating the
+posterior probability for each possible choice of nonzero admixture
+proportions.  Setting **exact.q = TRUE** activates this
+option. However, for larger K, it is not feasible to compute the exact
+solution because the number of ways of choosing nonzero admixture
+proportions is too large. Instead, setting **exact.q = FALSE**
+computes an approximate solution using simulated annealing. In this
+case, it is necessary to set input **T**. For an explanation of T, see
+function **update.q.sparse.approx**.
 
 The **cg** parameter controls the M-step update for the F matrix. When
 cg = FALSE, the allele frequencies are updated using the standard
 M-step solution. When cg = TRUE, the standard M-step update is
 adjusted using conjugate gradient with the Hestenes-Stiefel update
-formula. I've found that this sometimes yields a modest improvement to
-convergence of the EM iterates.
+formula. I've found that this sometimes improves convergence of the EM
+iterates.
 
 Finally, **mc.cores** is the input to mclapply specifying the number
 of cores to use in the multicore versions of the E and M-steps.
 
 #### Value
 
-The return value is a list with two list elements:
+The return value is a list with two elements:
 
 **F**, the p x K matrix of population-specific allele frequency
 estimates;
 
 **Q**, the n x K matrix of admixture proportions, where n is the
 number of individuals (samples). For labeled samples, the admixture
-proportions are Q[i,k] = 1 when z[i] = k.
+proportions are Q[i,k] = 1 for z[i] = k.
 
 ### Sample output from running example.admixture.R
 
