@@ -116,7 +116,7 @@ admixture.em.barebones <-
   # initialize the n x K matrix of admixture proportions.
   F <- matrix(runif(p*K),p,K)
   Q <- matrix(1/K,n,K)
-  
+
   # Repeat until convergence criterion is met.
   for (iter in 1:max.iter) {
 
