@@ -38,7 +38,7 @@ set.seed(seed)
 # --------------------------
 # Load the allele frequencies estimated from the HGDP data.
 cat("Loading allele frequency data.\n")
-af <- read.table("../data/hgdp.txt",sep = " ",stringsAsFactors = FALSE,
+af <- read.table("../data/hgdp.af.txt",sep = " ",stringsAsFactors = FALSE,
                  header = TRUE)$f1
 
 # Randomly select a subset of the allele frequencies >5%; these are
