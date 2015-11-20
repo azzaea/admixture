@@ -56,32 +56,21 @@ traw.file <- "hgdp.traw"
 # --------------
 # Read the genotype data from the .traw file.
 cat("Loading genotype data from .traw file.\n")
-out  <- read.traw.file(sprintf("%s/%s",data.dir,traw.file))
-map  <- out$map
-geno <- out$geno
-rm(out)
+geno <- read.traw.file(traw.file)$geno
 
 # Initialize the random number generator.
 set.seed(seed)
 
-# COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
-# -------------------------------------------------
+# COMPUTE ADMIXTURE ESTIMATES USING EM
+# ------------------------------------
 cat("Estimating admixture proportions in HGDP samples.\n")
-cat("EM algorithm setings:\n")
-cat("  Ancestral populations     ",K,"\n")
-cat("  Strength of L0-penalty    ",a,"\n")
-cat("  Genotype error probability",e,"\n")
-n <- nrow(panel)
-r <- system.time(out <-
-       admixture.em(geno,K,e = e,a = a,F = out.admix$F,Q = out.admix$Q,
-                    exact.q = FALSE,T = T,tolerance = 1e-4,cg = TRUE,
-                    mc.cores = mc.cores))
-rownames(out$Q) <- panel$id
-colnames(out$Q) <- paste0("K",1:K)
+r <- system.time(out <- admixture.em(geno,K,e = e,tolerance = 1e-4,
+                                     cg = TRUE,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(n,r)
+rm(r)
 
-# WRITE ESTIMATED ADMIXTURE PROPORTIONS TO FILE
-# ---------------------------------------------
-cat("Saving estimated admixture proportions to ",admix.pred.file,".\n",sep="")
-write.admix.file(sprintf("%s/%s",data.dir,admix.pred.file),out$Q)
+# COMPARE TO OUTPUT FROM ADMIXTURE
+# --------------------------------
+# Load the admixture proportions estimated using ADMIXTURE.
+# TO DO.
+

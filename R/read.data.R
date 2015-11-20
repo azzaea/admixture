@@ -41,19 +41,6 @@ read.traw.file <- function (file.name) {
   rm(out)
   geno <- t(geno)
   geno <- as.matrix(geno)
-
-  # Set the missing genotypes to the most frequent genotype.
-  p <- ncol(geno)
-  if (sum(is.na(geno)) > 0)
-    for (i in 1:p) {
-      j <- which(is.na(geno[,i]))
-      if (length(j) > 0) {
-        n0        <- sum(geno[,i] == 0,na.rm = TRUE)
-        n1        <- sum(geno[,i] == 1,na.rm = TRUE)
-        n2        <- sum(geno[,i] == 2,na.rm = TRUE)
-        geno[j,i] <- which.max(c(n0,n1,n2)) - 1
-      }
-    }
   
   # Return a list containing (1) the marker map positions, and (2) the
   # genotype matrix.

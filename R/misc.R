@@ -7,6 +7,7 @@
 #   distribute(x,k)
 #   caterase(s)
 #   beta.mean.var(mu,s)
+#   get.ncols.file(file.name,sep)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------
@@ -30,3 +31,12 @@ beta.mean.var <- function (mu, s) {
   return(pmax(0,c(a,a*(1/mu - 1))))
 }
 
+# ----------------------------------------------------------------------
+# Get the number of columns in a table file delimited by some
+# character specified by "sep".
+get.ncols.file <- function (file.name, sep) {
+  fc <- file(file.name)
+  n  <- length(unlist(strsplit(readLines(fc,1)," ")))
+  close(fc)
+  return(n)
+}
