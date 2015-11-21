@@ -68,9 +68,9 @@ L0-penalty term that encourages sparsity in the admixture
 proportions. In this example, all the samples are unlabeled.
 
 Script [predict.admix.hgdp.R](R/predict.admix.hgdp.R) uses the EM
-function to estimates admixture proportions in the Human Genome
+function to estimate admixture proportions in the Human Genome
 Diversity Panel (HGDP). For instructions on obtaining the HGDP
-genotype data, see the comments at the top of this script.
+genotype data, see the comments at the top of this R script.
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
