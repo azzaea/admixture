@@ -1,6 +1,16 @@
 # This script estimates admixture proportions in HGDP samples using
 # the EM algorithm.
 #
+# Here, I initialize the admixture proportions to the ADMIXTURE
+# estimates to show that the EM algorithm recovers a very similar
+# solution when the model parameters are initialized in the same
+# way. (Note that the solution is not exactly the same because the
+# models are slightly different.) You can choose instead a random
+# initialization by setting input Q = NULL in the call to
+# admixture.em.
+#
+# INSTRUCTIONS FOR OBTAINING GENOTYPES FROM HUMAN GENOME DIVERSITY PANEL:
+#
 # Follow these instructions to download the HGDP data. (Note that
 # these steps are nearly identical to the instructions provided as
 # part of the TeraStructure repository on github.)
@@ -80,5 +90,5 @@ rm(r)
 # ----------------------------------------------------
 cat(sprintf("Largest difference in admixture proportions is %0.3f.\n",
             max(abs(Q0 - out$Q))))
-cat("Distribution of maximum differences across all HGDP samples:\n")
-abs(Q0 - out$Q)
+cat("Distribution of largest differences across all HGDP samples:\n")
+print(round(quantile(apply(abs(Q0 - out$Q),1,max),seq(0,1,0.1)),digits = 3))
