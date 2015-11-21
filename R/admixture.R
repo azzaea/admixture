@@ -382,8 +382,8 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 # iterates.
 #
 admixture.em <- function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-                          tolerance = 1e-4, max.iter = 1000, exact.q = FALSE,
-                          cg = FALSE,mc.cores = 1, verbose = TRUE, T = 1) {
+                          tolerance = 1e-4, max.iter = 1e4, exact.q = FALSE,
+                          cg = TRUE,mc.cores = 1, verbose = TRUE, T = 1) {
 
   # This is a small constant added to allele frequency estimates to
   # ensure that the frequency estimates are always greater than zero.

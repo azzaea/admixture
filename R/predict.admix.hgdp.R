@@ -61,16 +61,24 @@ geno <- read.traw.file(traw.file)$geno
 # Initialize the random number generator.
 set.seed(seed)
 
-# COMPUTE ADMIXTURE ESTIMATES USING EM
-# ------------------------------------
+# LOAD ADMIXTURE OUTPUT
+# ---------------------
+# Load the admixture proportions computed using ADMIXTURE.
+Q0           <- read.table("../data/hgdp.admixture.K=7.admix",sep = " ",
+                           header = TRUE,stringsAsFactors = FALSE)
+rownames(Q0) <- Q0$id
+Q0           <- as.matrix(Q0[-1])
+
+# COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING EM
+# -------------------------------------------------------
 cat("Estimating admixture proportions in HGDP samples.\n")
-r <- system.time(out <- admixture.em(geno,K,e = e,tolerance = 1e-4,
-                                     cg = TRUE,mc.cores = mc.cores))
+r <- system.time(out <- admixture.em(geno,K,e = e,Q = Q0,mc.cores = mc.cores))
 cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
 rm(r)
 
-# COMPARE TO OUTPUT FROM ADMIXTURE
-# --------------------------------
-# Load the admixture proportions estimated using ADMIXTURE.
-# TO DO.
-
+# COMPARE RESULT OF RUNNING ADMIXTURE AND EM ALGORITHM
+# ----------------------------------------------------
+cat(sprintf("Largest difference in admixture proportions is %0.3f.\n",
+            max(abs(Q0 - out$Q))))
+cat("Distribution of maximum differences across all HGDP samples:\n")
+abs(Q0 - out$Q)
