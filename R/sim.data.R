@@ -3,12 +3,21 @@
 # This file contains functions for simulating data. Here is an
 # overview of the functions defined in this file:
 #
+#   beta.mean.var(mu,s)
 #   sample.af(af,d)
 #   sample.admix.2way(n,K)
 #   sample.genotypes(f,q)
 #   sample.genotype.matrix(f,Q)
 #
 # FUNCTION DEFINITIONS
+# ----------------------------------------------------------------------
+# Return the parameters of the Beta distribution that yield a random
+# variable with mean mu and variance s.
+beta.mean.var <- function (mu, s) {
+  a <- mu^2*((1-mu)/s - 1/mu)
+  return(pmax(0,c(a,a*(1/mu - 1))))
+}
+
 # ----------------------------------------------------------------------
 # Return a matrix of randomly generated population-specific allele
 # frequencies f[i,k], in which f[i,k] is drawn from the Beta

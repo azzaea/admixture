@@ -6,7 +6,6 @@
 #
 #   distribute(x,k)
 #   caterase(s)
-#   beta.mean.var(mu,s)
 #   get.ncols.file(file.name,sep)
 #
 # FUNCTION DEFINITIONS
@@ -22,14 +21,6 @@ distribute <- function (x, k)
 # this string.
 caterase <- function (s)
   cat(s,rep("\b",nchar(s)),sep = "")
-
-# ----------------------------------------------------------------------
-# Return the parameters of the Beta distribution that yield a random
-# variable with mean mu and variance s.
-beta.mean.var <- function (mu, s) {
-  a <- mu^2*((1-mu)/s - 1/mu)
-  return(pmax(0,c(a,a*(1/mu - 1))))
-}
 
 # ----------------------------------------------------------------------
 # Get the number of columns in a table file delimited by some
