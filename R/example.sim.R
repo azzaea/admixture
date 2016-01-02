@@ -2,6 +2,7 @@
 # penalty term, in simulated genotype data. In this case, all the
 # samples are unlabeled.
 library(parallel)
+library(turboEM)
 library(bayesm)
 source("misc.R")
 source("mcmc.R")
@@ -17,7 +18,7 @@ n        <- 500   # Number of samples.
 e        <- 0.01  # Probability of genotype error.
 a        <- 1e-3  # Strength of L0-penalty.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 2     # Number of CPUs to use.
+mc.cores <- 20    # Number of CPUs to use.
 
 # Specifies the amount of genetic drift for each population. For
 # details on the relationship between this parameter and population
@@ -74,11 +75,15 @@ rm(r,markers)
 # COMPUTE ADMIXTURE ESTIMATES USING EM
 # ------------------------------------
 cat("Fitting admixture model to data.\n")
-r <- system.time(out.em <-
-       admixture.em(sim.data$geno,K,e = e,a = 0,cg = TRUE,tolerance = 0.0005,
-                    mc.cores = mc.cores))
-cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(r)
+# r <- system.time(out.em <-
+#        admixture.em(sim.data$geno,K,e = e,a = 0,tolerance = 0.0005,
+#                     mc.cores = mc.cores))
+# cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
+# rm(r)
+
+# Fit admixture model to data using EM algorithm.
+out.em <- admixture.em(sim.data$geno,K,e = e,a = a,method = "squarem",T = T,
+                       exact.q = FALSE,tol = 1e-4,mc.cores = mc.cores)
 
 # Reorder the columns (ancestral populations) so that they best match
 # the ground-truth admixture proportions.
@@ -92,13 +97,13 @@ rm(cols,i)
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
-cat("Fitting L0-penalized admixture model to data.\n")
-r <- system.time(out.sparse <- 
-       admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                    tolerance = 0.0005,mc.cores = mc.cores,cg = TRUE,
-                    Q = out.em$Q,F = out.em$F))
-cat(sprintf("Computation took %0.1f min.\n\n",r["elapsed"]/60))
-rm(r)
+# cat("Fitting L0-penalized admixture model to data.\n")
+# r <- system.time(out.sparse <- 
+#        admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
+#                     tolerance = 0.0005,mc.cores = mc.cores,
+#                     Q = out.em$Q,F = out.em$F))
+# cat(sprintf("Computation took %0.1f min.\n\n",r["elapsed"]/60))
+# rm(r)
 
 # SUMMARIZE ACCURACY OF ADMIXTURE ESTIMATES
 # -----------------------------------------
@@ -106,18 +111,23 @@ rm(r)
 # proportions.
 cat("Overlap between estimated and ground-truth admixture proportions:\n")
 bins <- c(seq(0,0.8,0.1),0.85,0.9,0.95,1)
-r <- rbind(table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins)),
-           table(cut(rowSums(pmin(sim.data$Q,out.sparse$Q)),bins)))
-rownames(r) <- c("ML","L0")
-colnames(r) <- bins[-length(bins)]
+# r <- rbind(table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins)),
+#            table(cut(rowSums(pmin(sim.data$Q,out.sparse$Q)),bins)))
+# rownames(r) <- c("ML","L0")
+# colnames(r) <- bins[-length(bins)]
+r        <- table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins))
+names(r) <- bins[-length(bins)]
 print(r)
 cat("\n")
 
 # Print a table summarizing the number of contributing ancestral
 # populations (>1%).
 cat("Number of contributing ancestral populations (>1%):\n")
+# r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
+#            summary(factor(rowSums(out.em$Q > 0.01),1:K)),
+#            summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
+# rownames(r) <- c("true","ML","L0")
 r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
-           summary(factor(rowSums(out.em$Q > 0.01),1:K)),
-           summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
-rownames(r) <- c("true","ML","L0")
+           summary(factor(rowSums(out.em$Q > 0.01),1:K)))
+rownames(r) <- c("true","pred")
 print(r)

@@ -164,16 +164,22 @@ update.q.sparse.approx <- function (M, x0, a, T, u) {
 # This is the multicore variant of update.q.sparse.approx.
 update.q.sparse.approx.mc <- function (M, x0, a, T, u, mc.cores = 2) {
 
-  # Assign each sample to a CPU, and compute admixture proportion
-  # estimates for each set of samples.
-  rows <- distribute(1:nrow(M),mc.cores)
-  out  <- mclapply(rows,function(i)update.q.sparse.approx(M[i,],x0[i,],a,T,u),
-                   mc.cores = mc.cores)
+  # Check the boundary condition when only 1 core is specified.
+  if (mc.cores == 1)
+    return(update.q.sparse.approx(M,x0,a,T,u))
+  else {
+  
+    # Assign each sample to a CPU, and compute admixture proportion
+    # estimates for each set of samples.
+    rows <- distribute(1:nrow(M),mc.cores)
+    out <- mclapply(rows,function(i)update.q.sparse.approx(M[i,],x0[i,],a,T,u),
+                    mc.cores = mc.cores)
 
-  # Aggregate the outputs from the individual CPUs.
-  Q <- do.call(rbind,out)
-  Q[unlist(rows),] <- Q
-  return(Q)
+    # Aggregate the outputs from the individual CPUs.
+    Q <- do.call(rbind,out)
+    Q[unlist(rows),] <- Q
+    return(Q)
+  }
 }
 
 # ----------------------------------------------------------------------
@@ -231,16 +237,22 @@ admixture.labeled.Estep.fast <- function (X, F, z, e) {
 # ----------------------------------------------------------------------
 # This is the multicore variant of admixture.labeled.Estep.fast.
 admixture.labeled.Estep.mc <- function (X, F, z, e, mc.cores = 2) {
+
+  # Check the boundary condition when only 1 core is specified.
+  if (mc.cores == 1)
+    return(admixture.labeled.Estep.fast(X,F,z,e))
+  else {
   
-  # Assign each sample to a CPU, and compute the expected allele
-  # counts for each set of samples.
-  out <- mclapply(distribute(1:nrow(X),mc.cores),
-                  function (i) admixture.labeled.Estep.fast(X[i,],F,z[i],e),
-                  mc.cores = mc.cores)
+    # Assign each sample to a CPU, and compute the expected allele
+    # counts for each set of samples.
+    out <- mclapply(distribute(1:nrow(X),mc.cores),
+                    function (i) admixture.labeled.Estep.fast(X[i,],F,z[i],e),
+                    mc.cores = mc.cores)
   
-  # Aggregate the outputs from the individual CPUs.
-  return(list(n0 = Reduce('+',lapply(out,function (x) x$n0)),
-              n1 = Reduce('+',lapply(out,function (x) x$n1))))
+    # Aggregate the outputs from the individual CPUs.
+    return(list(n0 = Reduce('+',lapply(out,function (x) x$n0)),
+                n1 = Reduce('+',lapply(out,function (x) x$n1))))
+  }
 }
 
 # ----------------------------------------------------------------------
@@ -316,29 +328,146 @@ admixture.Estep.fast <- function (X, F, Q, n0, n1, e) {
 # This is the multicore variant of admixture.Estep.fast.
 admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 
-  # Get the number of markers (p) and the number of ancestral
-  # populations (K).
-  p <- nrow(F)
-  K <- ncol(F)
+  # Check the boundary condition when only 1 core is specified.
+  if (mc.cores == 1)
+    return(admixture.Estep.fast(X,F,Q,n0,n1,e))
+  else {
+    
+    # Get the number of markers (p) and the number of ancestral
+    # populations (K).
+    p <- nrow(F)
+    K <- ncol(F)
   
-  # Assign each sample to a CPU, and compute the expected allele
-  # counts for each set of samples.
-  N    <- matrix(0,p,K)
-  rows <- distribute(1:nrow(X),mc.cores)
-  out  <- mclapply(rows,function (i) admixture.Estep.fast(X[i,],F,Q[i,],N,N,e),
-                   mc.cores = mc.cores)
+    # Assign each sample to a CPU, and compute the expected allele
+    # counts for each set of samples.
+    N    <- matrix(0,p,K)
+    rows <- distribute(1:nrow(X),mc.cores)
+    out  <- mclapply(rows,function(i)admixture.Estep.fast(X[i,],F,Q[i,],N,N,e),
+                     mc.cores = mc.cores)
 
-  # Aggregate the outputs from the individual CPUs. For the expected
-  # allele counts (n0 and n1), also add the prior expected counts to
-  # obtain the final result.
-  n0 <- n0 + Reduce('+',lapply(out,function (x) x$n0))
-  n1 <- n1 + Reduce('+',lapply(out,function (x) x$n1))
-  m  <- do.call(rbind,lapply(out,function (x) x$m))
-  m[unlist(rows),] <- m
-  return(list(m = m,n0 = n0,n1 = n1))
+    # Aggregate the outputs from the individual CPUs. For the expected
+    # allele counts (n0 and n1), also add the prior expected counts to
+    # obtain the final result.
+    n0 <- n0 + Reduce('+',lapply(out,function (x) x$n0))
+    n1 <- n1 + Reduce('+',lapply(out,function (x) x$n1))
+    m  <- do.call(rbind,lapply(out,function (x) x$m))
+    m[unlist(rows),] <- m
+    return(list(m = m,n0 = n0,n1 = n1))
+  }
 }
 
 # ----------------------------------------------------------------------
+# TO DO: Explain here what this function does.
+get.admixture.params <- function (x, p, z, K) {
+
+  # Get the set of samples that are labeled (i) and unlabeled (j).
+  i <- which(!is.na(z))
+  j <- which(is.na(z))
+
+  # Get the number of samples (n), and the number of unlabeled samples (nu).
+  n  <- length(z)
+  nu <- length(j)
+
+  # Get the allele frequencies.
+  e <- 1:(p*K)
+  F <- sigmoid(matrix(x[e],p,K))
+
+  # Get the admixture proportions for the labeled and unlabeled samples.
+  Q                <- matrix(0,n,K)
+  Q[cbind(i,z[i])] <- 1
+  Q[j,]            <- softmax.rows(matrix(x[-e],nu,K-1))
+ 
+  # Return a list containing the allele frequencies and admixture
+  # proportions.
+  return(list(F = F,Q = Q))
+}
+
+# ----------------------------------------------------------------------
+# TO DO: Explain here what this function does.
+get.turboem.params <- function (F, Q)
+  c(as.vector(logit(F)),as.vector(softmax.inverse.rows(Q)))
+
+# ----------------------------------------------------------------------
+# TO DO: Explain here what this function does.
+admixture.em.update <- function (par, auxdata) {
+
+  # This is a small constant added to allele frequency estimates to
+  # ensure that the frequency estimates are always greater than zero.
+  eps <- 0.001  
+
+  # All proportions greater than this number are considered 0.
+  zero <- 1e-6
+  
+  # Get the genotypes (X), ancestral population labels (z),
+  # user-specified model parameters (K, e, a), and settings for the EM
+  # algorithm (mc.cores, exact.q, T).
+  X        <- auxdata$X
+  z        <- auxdata$z
+  K        <- auxdata$K
+  e        <- auxdata$e
+  a        <- auxdata$a
+  T        <- auxdata$T
+  u        <- auxdata$u
+  exact.q  <- auxdata$exact.q
+  mc.cores <- auxdata$mc.cores
+  rm(auxdata)
+
+  # Get the number of markers.
+  p <- ncol(X)
+
+  # Get the set of samples that are labeled (i) and unlabeled (j).
+  i <- which(!is.na(z))
+  j <- which(is.na(z))
+
+  # Get the current estimates of the allele frequencies (F) and
+  # admixture proportions (Q).
+  out <- get.admixture.params(par,p,z,K) 
+  F   <- out$F
+  Q   <- out$Q
+  rm(out)
+
+  # E-STEP
+  # Compute the expected allele counts from the labeled, single-origin
+  # samples. I add a small constant to n0 and n1 so that the counts are
+  # never exactly zero.  
+  if (length(i) == 0) {
+    n0 <- matrix(eps,p,K)
+    n1 <- matrix(eps,p,K)
+  } else {
+    out <- admixture.labeled.Estep.mc(X[i,],F,z[i],e,mc.cores)
+    n0  <- out$n0 + eps
+    n1  <- out$n1 + eps
+    rm(out)
+  }
+  
+  # Compute the expected allele counts and the expected population
+  # counts in the unlabeled samples only.
+  out <- admixture.Estep.mc(X[j,],F,Q[j,],n0,n1,e,mc.cores)
+  M   <- out$m
+  n0  <- out$n0
+  n1  <- out$n1
+  rm(out)
+
+  # M-STEP
+  # Adjust the allele frequencies using the standard M-step
+  # update.
+  F <- n1/(n0 + n1)
+
+  # Update the admixture proportions in the unlabeled samples.
+  if (a == 0)
+    Q[j,] <- M/rowSums(M)
+  else if (exact.q)
+    Q[j,] <- update.q.sparse.exact(M,a)
+  else
+    Q[j,] <- update.q.sparse.approx.mc(M,Q[j,] > zero,a,T,u,mc.cores)
+
+  # Output the M-step update.
+  return(get.turboem.params(F,Q[j,]))
+}
+
+# ----------------------------------------------------------------------
+# TO DO: Update the description of admixture.em.
+#
 # Estimate population-specific allele frequencies and admixture
 # proportions in unlabeled samples from genotypes. The non-optional
 # inputs are as follows:
@@ -380,16 +509,12 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 # formula). In some cases, I've found that the conjugate gradient
 # upgrade can lead to improvements in the convergence rate of the EM
 # iterates.
-#
-admixture.em <- function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-                          tolerance = 1e-4, max.iter = 1e4, exact.q = FALSE,
-                          cg = TRUE,mc.cores = 1, verbose = TRUE, T = 1) {
+admixture.em <-
+  function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL, tol = 1e-4,
+            max.iter = 1e4, method = "squarem", exact.q = FALSE, T = 1,
+            mc.cores = 1, trace = TRUE) {
 
-  # This is a small constant added to allele frequency estimates to
-  # ensure that the frequency estimates are always greater than zero.
-  eps <- 0.001  
-
-  # Get the number of samples (n) and the number of markers (p).
+  # Get the number of samples (n)and the number of markers (p).
   n <- nrow(X)
   p <- ncol(X)
 
@@ -405,136 +530,69 @@ admixture.em <- function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
   # vector in which all the entries are missing.
   if (is.null(z))
     z <- rep(NA,n)
-  
+
   # Get the set of samples that are labeled (i) and unlabeled (j).
   i <- which(!is.na(z))
   j <- which(is.na(z))
-  z <- z[i]
-
+  
   # Initialize the p x K matrix of allele frequencies.
   if (is.null(F))
     F <- matrix(runif(p*K),p,K)
 
-  # Initialize the n x K matrix of admixture proportions. Acquire the
-  # ground-truth admixture proportions for the labeled samples (i),
-  # and set the admixture proportions for the unlabeled samples (j) to
-  # be uniform.
-  if (is.null(Q)) {
-    Q             <- matrix(0,n,K)
-    Q[cbind(i,z)] <- 1
-    Q[j,]         <- 1/K
-  }
+  # Initialize the n x K matrix of admixture proportions for the
+  # labeled and unlabeled samples.
+  if (is.null(Q))
+    Q <- matrix(1/K,length(j),K)
+  else
+    Q <- Q[j,]
   
   # For the approximate M-step update, generate a sequence of
   # pseudorandom numbers of length 4*n, where n is the length of the
   # inverse temperature schedule.
   if (a > 0 & !exact.q)
     u <- runif(4*length(T))
-  
-  # Repeat until convergence criterion is met.
-  if (verbose)
-    cat("iter delta-F delta-Q -beta-\n")
-  g <- 0
-  d <- 0
-  for (iter in 1:max.iter) {
+  else
+    u <- NULL
 
-    # Save the current parameter estimates.
-    F0 <- F
-    Q0 <- Q
+  # Define a function to check convergence.
+  check.convergence <- function (old, new) {
 
-    # Save the gradient and search direction from the previous
-    # iteration.
-    g0 <- g
-    d0 <- d
+    # Get some of the inputs to function admixture.em.    
+    tol <- get("tol",envir = environment(convfn.user))
+    p   <- get("p",envir = environment(convfn.user))
+    K   <- get("K",envir = environment(convfn.user))
+    z   <- get("z",envir = environment(convfn.user))
 
-    # E-STEP
-    # Compute the expected allele counts from the labeled, single-origin
-    # samples. I add a small constant to n0 and n1 so that the counts are
-    # never exactly zero.  
-    if (length(i) == 0) {
-      n0 <- matrix(eps,p,K)
-      n1 <- matrix(eps,p,K)
-    } else {
-      if (mc.cores == 1)
-        out <- admixture.labeled.Estep.fast(X[i,],F,z,e)
-      else
-        out <- admixture.labeled.Estep.mc(X[i,],F,z,e,mc.cores)
-      n0 <- out$n0 + eps
-      n1 <- out$n1 + eps
-      rm(out)
-    }
-
-    # Compute the expected allele counts and the expected population
-    # counts in the unlabeled samples only.
-    if (mc.cores == 1)
-      out <- admixture.Estep.fast(X[j,],F,Q[j,],n0,n1,e)
-    else
-      out <- admixture.Estep.mc(X[j,],F,Q[j,],n0,n1,e,mc.cores)
-    M  <- out$m
-    n0 <- out$n0
-    n1 <- out$n1
+    # Get the previous parameter estimates.
+    out <- get.admixture.params(old,p,z,K) 
+    F0  <- out$F
+    Q0  <- out$Q
     rm(out)
     
-    # M-STEP
-    if (cg) {
+    # Get the current parameter estimates.
+    out <- get.admixture.params(new,p,z,K) 
+    F   <- out$F
+    Q   <- out$Q
+    rm(out)
 
-      # For all iterations after the first, compute the conjugate
-      # gradient update for the binomial success rates. This update is
-      # based on the Hestenes-Stiefel formula as described in Nocedal
-      # and Wright (2006). Another option that doesn't seem to work as
-      # well, but is included here for posterity, is the Polak-Ribiere
-      # formula:
-      #
-      #   b = max(0,sum(g*(g - g0))/sum(g0^2))
-      #
-      # Note #1: The gradient is not the "true" gradient, but rather
-      # the search direction implicit in the standard M-step
-      # update. Note #2: I project the iterate onto [0,1] to ensure
-      # that each of the parameters represents a proportion.
-      g <- n1/(n0 + n1) - F
-      if (iter == 1)
-        b <- 0
-      else
-        b <- min(1,max(-1,sum(g*(g - g0))/sum((g - g0)*d0)))
-      d   <- g + b*d0
-      F   <- F + d
-      F[] <- pmax(F,0.0001)
-      F[] <- pmin(F,0.9999)
-    }
-    else {
-
-      # Adjust the allele frequencies using the standard M-step
-      # update.
-      b <- NA
-      F <- n1/(n0 + n1)
-    }
-
-    # Update the admixture proportions in the unlabeled samples.
-    if (a == 0)
-      Q[j,] <- M/rowSums(M)
-    else if (exact.q)
-      Q[j,] <- update.q.sparse.exact(M,a)
-    else if (mc.cores == 1)
-      Q[j,] <- update.q.sparse.approx(M,Q0[j,] > 0,a,T,u)
-    else
-      Q[j,] <- update.q.sparse.approx.mc(M,Q0[j,] > 0,a,T,u,mc.cores)
-  
-    # CHECK CONVERGENCE
-    # Print the status of the algorithm and check convergence.
-    # Convergence is reached when the maximum absolute difference
-    # between the parameters at two successive iterations is less than
-    # the specified tolerance.
-    err <- list(f = max(abs(F - F0)),
-                q = max(abs(Q - Q0)))
-    if (verbose)
-      caterase(sprintf("%4d %0.1e %0.1e %06.3f",iter,err$f,err$q,b))
-    if (max(err$f,err$q) < tolerance)
-      break
+    # Check convergence.
+    err <- list(f = max(abs(F0 - F)),
+                q = max(abs(Q0 - Q)))
+    cat(sprintf("dF=%0.1e dQ=%0.1e ",err$f,err$q))
+    return(max(max(err$f),max(err$q)) < tol)
   }
-  if (verbose)
-    cat("\n")
 
-  # Return a list containing the estimated allele frequencies and
-  # admixture proportions.
-  return(list(F = F,Q = Q))
+  # Fit the admixture model to data using the EM algorithm, or an
+  # accelerated variant of the EM algorithm.
+  out <- turboem(par = get.turboem.params(F,Q),method = method,
+                 control.run = list(maxiter = max.iter,trace = trace,
+                   convfn.user = check.convergence),
+                 fixptfn = admixture.em.update,
+                 auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,u = u,
+                   exact.q = exact.q,mc.cores = mc.cores))
+  cat("\n")
+
+  # Return a list containing the estimated allele frequencies (F)
+  # admixture proportions (Q), and the output from turboem.
+  return(c(get.admixture.params(pars(out),p,z,K),list(turboem = out)))
 }
