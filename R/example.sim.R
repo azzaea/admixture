@@ -1,6 +1,7 @@
 # Compare estimation of admixture proportions, with and without the L0
 # penalty term, in simulated genotype data. In this case, all the
 # samples are unlabeled.
+suppressPackageStartupMessages({
 library(parallel)
 library(turboEM)
 library(bayesm)
@@ -9,7 +10,7 @@ source("mcmc.R")
 source("admixture.R")
 source("sim.data.R")
 dyn.load("mcmc.so")
-dyn.load("admixture.so")
+dyn.load("admixture.so")})
 
 # SCRIPT PARAMETERS
 # -----------------
@@ -72,38 +73,35 @@ markers       <- which(r > 0 & r < 1)
 sim.data$geno <- sim.data$geno[,markers]
 rm(r,markers)
 
-# COMPUTE ADMIXTURE ESTIMATES USING EM
-# ------------------------------------
+# COMPUTE ADMIXTURE ESTIMATES USING SQUAREM
+# -----------------------------------------
 cat("Fitting admixture model to data.\n")
-# r <- system.time(out.em <-
-#        admixture.em(sim.data$geno,K,e = e,a = 0,tolerance = 0.0005,
-#                     mc.cores = mc.cores))
-# cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-# rm(r)
-
-# Fit admixture model to data using EM algorithm.
-out.em <- admixture.em(sim.data$geno,K,e = e,a = a,method = "squarem",T = T,
-                       exact.q = FALSE,tol = 1e-4,mc.cores = mc.cores)
+out.em <- admixture.em(sim.data$geno,K,e = e,method = "squarem",tol = 1e-4,
+                       mc.cores = mc.cores,trace = FALSE)
+with(out.em$turboem,
+     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+                       "after %d iterations and %0.1f min.\n"),
+                 fpeval,itr,runtime[,"elapsed"]/60)))
 
 # Reorder the columns (ancestral populations) so that they best match
 # the ground-truth admixture proportions.
 cols <- rep(NA,K)
 for (i in 1:K)
   cols[i] <- which.min(colSums(abs(out.em$Q - sim.data$Q[,i])))
-out.em <- with(out.em,
-               list(Q = Q[,cols],
-                    F = F[,cols]))
+out.em$Q <- out.em$Q[,cols]
+out.em$F <- out.em$F[,cols]
 rm(cols,i)
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
-# cat("Fitting L0-penalized admixture model to data.\n")
-# r <- system.time(out.sparse <- 
-#        admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-#                     tolerance = 0.0005,mc.cores = mc.cores,
-#                     Q = out.em$Q,F = out.em$F))
-# cat(sprintf("Computation took %0.1f min.\n\n",r["elapsed"]/60))
-# rm(r)
+cat("Fitting L0-penalized admixture model to data.\n")
+out.sparse <- admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
+                           F = out.em$F,Q = out.em$Q,method = "squarem",
+                           tol = 1e-4,mc.cores = mc.cores,trace = FALSE)
+with(out.sparse$turboem,
+     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+                       "after %d iterations and %0.1f min.\n\n"),
+                 fpeval,itr,runtime[,"elapsed"]/60)))
 
 # SUMMARIZE ACCURACY OF ADMIXTURE ESTIMATES
 # -----------------------------------------
@@ -111,23 +109,18 @@ rm(cols,i)
 # proportions.
 cat("Overlap between estimated and ground-truth admixture proportions:\n")
 bins <- c(seq(0,0.8,0.1),0.85,0.9,0.95,1)
-# r <- rbind(table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins)),
-#            table(cut(rowSums(pmin(sim.data$Q,out.sparse$Q)),bins)))
-# rownames(r) <- c("ML","L0")
-# colnames(r) <- bins[-length(bins)]
-r        <- table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins))
-names(r) <- bins[-length(bins)]
+r    <- rbind(table(cut(rowSums(pmin(sim.data$Q,out.em$Q)),bins)),
+              table(cut(rowSums(pmin(sim.data$Q,out.sparse$Q)),bins)))
+rownames(r) <- c("ML","L0")
+colnames(r) <- bins[-length(bins)]
 print(r)
 cat("\n")
 
 # Print a table summarizing the number of contributing ancestral
 # populations (>1%).
 cat("Number of contributing ancestral populations (>1%):\n")
-# r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
-#            summary(factor(rowSums(out.em$Q > 0.01),1:K)),
-#            summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
-# rownames(r) <- c("true","ML","L0")
 r <- rbind(summary(factor(rowSums(sim.data$Q > 0.01),1:K)),
-           summary(factor(rowSums(out.em$Q > 0.01),1:K)))
-rownames(r) <- c("true","pred")
+           summary(factor(rowSums(out.em$Q > 0.01),1:K)),
+           summary(factor(rowSums(out.sparse$Q > 0.01),1:K)))
+rownames(r) <- c("true","ML","L0")
 print(r)

@@ -558,10 +558,11 @@ admixture.em <-
   check.convergence <- function (old, new) {
 
     # Get some of the inputs to function admixture.em.    
-    tol <- get("tol",envir = environment(convfn.user))
-    p   <- get("p",envir = environment(convfn.user))
-    K   <- get("K",envir = environment(convfn.user))
-    z   <- get("z",envir = environment(convfn.user))
+    trace <- get("trace",envir = environment(convfn.user))
+    tol   <- get("tol",envir = environment(convfn.user))
+    p     <- get("p",envir = environment(convfn.user))
+    K     <- get("K",envir = environment(convfn.user))
+    z     <- get("z",envir = environment(convfn.user))
 
     # Get the previous parameter estimates.
     out <- get.admixture.params(old,p,z,K) 
@@ -578,16 +579,19 @@ admixture.em <-
     # Check convergence.
     err <- list(f = max(abs(F0 - F)),
                 q = max(abs(Q0 - Q)))
-    cat(sprintf("dF=%0.1e dQ=%0.1e ",err$f,err$q))
+    if (trace)
+      cat(sprintf("dF=%0.1e dQ=%0.1e ",err$f,err$q))
+    else
+      cat("*")
     return(max(max(err$f),max(err$q)) < tol)
   }
 
   # Fit the admixture model to data using the EM algorithm, or an
   # accelerated variant of the EM algorithm.
   out <- turboem(par = get.turboem.params(F,Q),method = method,
+                 fixptfn = admixture.em.update,
                  control.run = list(maxiter = max.iter,trace = trace,
                    convfn.user = check.convergence),
-                 fixptfn = admixture.em.update,
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,u = u,
                    exact.q = exact.q,mc.cores = mc.cores))
   cat("\n")
