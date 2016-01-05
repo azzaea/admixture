@@ -427,6 +427,7 @@ admixture.em.update <- function (par, auxdata) {
   rm(out)
 
   # E-STEP
+  # ------
   # Compute the expected allele counts from the labeled, single-origin
   # samples. I add a small constant to n0 and n1 so that the counts are
   # never exactly zero.  
@@ -449,6 +450,7 @@ admixture.em.update <- function (par, auxdata) {
   rm(out)
 
   # M-STEP
+  # ------
   # Adjust the allele frequencies using the standard M-step
   # update.
   F <- n1/(n0 + n1)
@@ -575,7 +577,7 @@ admixture.em <-
     F   <- out$F
     Q   <- out$Q
     rm(out)
-
+    
     # Check convergence.
     err <- list(f = max(abs(F0 - F)),
                 q = max(abs(Q0 - Q)))

@@ -1,13 +1,15 @@
 # Illustrates how to use the EM algorithm (admixture.em) to predict
 # admixture proportions when we have a reference set of labeled,
 # single-origin samples.
+suppressPackageStartupMessages({
 library(parallel)
+library(turboEM)
 source("misc.R")
 source("mcmc.R")
 source("admixture.R")
 source("sim.data.R")
 dyn.load("mcmc.so")
-dyn.load("admixture.so")
+dyn.load("admixture.so")})
 
 # SCRIPT PARAMETERS
 # -----------------
@@ -78,7 +80,7 @@ for (i in 1:n) {
 cat("Generating genotype data for test samples.\n")
 for (i in 1:n.test) {
 
-  # Randomly sample the admixture proportions,
+  # andomly sample the admixture proportions,
   k             <- sample(1:K,size = k.test[i],prob = p.deme)
   q.test[i,k]   <- 1/length(k)
   geno.test[i,] <- sample.genotypes(f,q.test[i,])
@@ -90,24 +92,28 @@ cat("Setting ",100*prop.na,"% of the genotypes to NA.\n",sep="")
 geno.train[runif(n*p) < prop.na]     <- NA
 geno.test[runif(n.test*p) < prop.na] <- NA
 
-# COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING EM
-# -------------------------------------------------------
+# COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING SQUAREM
+# ------------------------------------------------------------
 cat("Computing maximum-likelihood admixture proportion estimates.\n")
 X <- rbind(geno.train,geno.test)
 z <- c(q.train %*% 1:K,rep(NA,n.test))
-r <- system.time(out.em <-
-       admixture.em(X,K,z,e = e,cg = TRUE,mc.cores = mc.cores))
-cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(r)
+out.em <- admixture.em(X,K,z,e = e,method = "squarem",tol = 1e-4,
+                       mc.cores = mc.cores,trace = FALSE)
+with(out.em$turboem,
+     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+                       "after %d iterations and %0.1f min.\n"),
+                 fpeval,itr,runtime[,"elapsed"]/60)))
 
-# COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
-# -------------------------------------------------
+# COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING SQUAREM
+# ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")
-r <- system.time(out.sparse <-
-       admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,cg = TRUE,
-                    exact.q = FALSE,T = T,mc.cores = mc.cores))
-cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(r)
+out.sparse <- admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,
+                           exact.q = FALSE,T = T,mc.cores = mc.cores,
+                           tol = 1e-4,trace = FALSE)
+with(out.sparse$turboem,
+     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+                       "after %d iterations and %0.1f min.\n"),
+                 fpeval,itr,runtime[,"elapsed"]/60)))
 
 # ASSESS ACCURACY IN TEST SAMPLES
 # -------------------------------
