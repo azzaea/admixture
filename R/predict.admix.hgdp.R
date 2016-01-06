@@ -43,14 +43,16 @@
 #     --chr 1-22 --extract hgdp-markers-pruned.txt --out hgdp2
 #  mv hgdp2.traw hgdp.traw
 #
+suppressPackageStartupMessages({
 library(parallel)
 library(data.table)
+library(turboEM)
 source("misc.R")
 source("mcmc.R")
 source("read.data.R")
 source("admixture.R")
 dyn.load("mcmc.so")
-dyn.load("admixture.so")
+dyn.load("admixture.so")})
 
 # SCRIPT PARAMETERS
 # -----------------
@@ -79,12 +81,17 @@ Q0           <- read.table("../data/hgdp.admixture.K=7.admix",sep = " ",
 rownames(Q0) <- Q0$id
 Q0           <- as.matrix(Q0[-1])
 
-# COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING EM
-# -------------------------------------------------------
+# COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING SQUAREM
+# ------------------------------------------------------------
+# For a random initialization of the admixture proportions instead of
+# initializing to the estimates from ADMIXTURE, set Q = NULL.
 cat("Estimating admixture proportions in HGDP samples.\n")
-r <- system.time(out <- admixture.em(geno,K,e = e,Q = Q0,mc.cores = mc.cores))
-cat(sprintf("Computation took %0.1f min.\n",r["elapsed"]/60))
-rm(r)
+out <- admixture.em(geno,K,e = e,Q = Q0,method = "squarem",tol = 1e-4,
+                    mc.cores = mc.cores,trace = FALSE)
+with(out$turboem,
+     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+                       "after %d iterations and %0.1f min.\n"),
+                 fpeval,itr,runtime[,"elapsed"]/60)))
 
 # COMPARE RESULT OF RUNNING ADMIXTURE AND EM ALGORITHM
 # ----------------------------------------------------

@@ -23,7 +23,9 @@ maximization (EM) algorithm. (See
 [admixture.barebones.R](R/admixture.barebones.R) and
 [admixture.barebones.demo.R](R/admixture.barebones.demo.R) for a
 extremely simple, or "bare bones", implementation that actually works,
-albeit slowly!)
+albeit slowly!) I use the
+[turboEM](http://cran.r-project.org/package=turboEM) library to
+improve the slow convergence of EM.
 
 The ADMIXTURE software is implemented using a quasi-Newton method, and
 will typically converge much more quickly to a solution than the EM
@@ -67,10 +69,16 @@ admixture estimates in simulated genotype data, with and without the
 L0-penalty term that encourages sparsity in the admixture
 proportions. In this example, all the samples are unlabeled.
 
-Script [predict.admix.hgdp.R](R/predict.admix.hgdp.R) uses the EM
-function to estimate admixture proportions in the Human Genome
-Diversity Panel (HGDP). For instructions on obtaining the HGDP
-genotype data, see the comments at the top of this R script.
+Script [predict.admix.hgdp.R](R/predict.admix.hgdp.R) uses
+admixture.em to estimate admixture proportions in the Human Genome
+Diversity Panel (HGDP). If the admixture proportions are initialized
+to the ADMIXTURE estimates (Q0), the EM algorithm outputs nearly the
+same solution; the largest absolute difference in all the admixture
+proportions is 1.2%. With a random initialization, the EM algorithm is
+still much slower than ADMIXTURE; in my trials, it takes about 10
+times longer for the EM algrotihm to run. For instructions on
+obtaining the HGDP genotype data, see the comments at the top of this
+R script.
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
@@ -82,8 +90,8 @@ genotypes.
 #### Usage
 
     admixture.em(X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-    			 tolerance = 1e-4, max.iter = 1000, exact.q = FALSE,	
-                 cg = FALSE,mc.cores = 1, verbose = TRUE, T = 1)
+					tol = 1e-4, max.iter = 1e4, method = "squarem",
+					exact.q = FALSE, T = 1, mc.cores = 1, trace = TRUE)
 
 #### Arguments
 				 
@@ -117,11 +125,11 @@ allele frequencies and admixture proportions, respectively. If these
 inputs aren't specified, these model parameters are randomly
 initialized. For more details on F and Q, see below.
 
-Input argument **tolerance** specifies the convergence tolerance of
-the EM iterates. Convergence is reached when the maximum absolute
-difference between the parameters at two successive iterations is less
-than the specified tolerance. Input **max.iter** specifies the maximum
-number of EM iterations.
+Input argument **tol** specifies the convergence tolerance of the EM
+iterates. Convergence is reached when the maximum absolute difference
+between the parameters at two successive iterations is less than the
+specified tolerance. Input **max.iter** specifies the maximum number
+of turboEM iterations.
 
 There are two variations to the M-step update for Q. When the number
 of ancestral populations is small (e.g., K < 20), it is feasible to
@@ -135,19 +143,16 @@ computes an approximate solution using simulated annealing. In this
 case, it is necessary to set input **T**. For an explanation of T, see
 function **update.q.sparse.approx**.
 
-The **cg** parameter controls the M-step update for the F matrix. When
-cg = FALSE, the allele frequencies are updated using the standard
-M-step solution. When cg = TRUE, the standard M-step update is
-adjusted using conjugate gradient with the Hestenes-Stiefel update
-formula. I've found that this sometimes improves convergence of the EM
-iterates.
+Input argument "method" specifies which turboEM algorithm to use. For
+now, only the "em" and "squarem" algorithms are allowed. See
+**help(turboem)** for more details.
 
 Finally, **mc.cores** is the input to mclapply specifying the number
 of cores to use in the multicore versions of the E and M-steps.
 
 #### Value
 
-The return value is a list with two elements:
+The return value is a list with three elements:
 
 **F**, the p x K matrix of population-specific allele frequency
 estimates;
@@ -155,3 +160,5 @@ estimates;
 **Q**, the n x K matrix of admixture proportions, where n is the
 number of individuals (samples). For labeled samples, the admixture
 proportions are Q[i,k] = 1 for z[i] = k.
+
+**turboem**, the output from function turboem.

@@ -13,7 +13,10 @@
 #   admixture.labeled.Estep.mc(X,F,z,e,mc.cores)
 #   admixture.Estep.fast(X,F,Q,n0,n1,e)
 #   admixture.Estep.mc(X,F,Q,n0,n1,e,mc.cores)
-#   admixture.em(X,n0,n1,e,a,F,Q,tolerance,max.iter,exact.q,mc.cores,verbose,T)
+#   get.admixture.params(x,p,z,K)
+#   get.turboem.params(F,Q)
+#   admixture.em.update(par,auxdata)
+#   admixture.em(X,K,z,e,a,F,Q,tol,max.iter,method,exact.q,T,mc.cores,trace)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------
@@ -357,7 +360,12 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 }
 
 # ----------------------------------------------------------------------
-# TO DO: Explain here what this function does.
+# Given the parameters being optimized by turboem (x), returns the
+# ADMIXTURE model parameters: the allele frequencies (F) and the
+# admixture proportions (Q) for both labeled and unlabeled samples.
+# Input p gives the number of genetic markers, z is the vector of
+# population labels (set to NA if the label is not provided), and K is
+# the number of ancestral populations.
 get.admixture.params <- function (x, p, z, K) {
 
   # Get the set of samples that are labeled (i) and unlabeled (j).
@@ -383,12 +391,16 @@ get.admixture.params <- function (x, p, z, K) {
 }
 
 # ----------------------------------------------------------------------
-# TO DO: Explain here what this function does.
+# This function is the inverse of get.admitxure.parameters: given the
+# matrix of allele frequencies (F) and the matrix of admixture
+# proportions for unlabeled samples only (Q), it returns the
+# parameters being optimized by turboem.
 get.turboem.params <- function (F, Q)
   c(as.vector(logit(F)),as.vector(softmax.inverse.rows(Q)))
 
 # ----------------------------------------------------------------------
-# TO DO: Explain here what this function does.
+# This function implements the EM update called by turboem in function
+# admixture.em.
 admixture.em.update <- function (par, auxdata) {
 
   # This is a small constant added to allele frequency estimates to
@@ -411,7 +423,6 @@ admixture.em.update <- function (par, auxdata) {
   exact.q  <- auxdata$exact.q
   mc.cores <- auxdata$mc.cores
   rm(auxdata)
-
   # Get the number of markers.
   p <- ncol(X)
 
@@ -468,8 +479,6 @@ admixture.em.update <- function (par, auxdata) {
 }
 
 # ----------------------------------------------------------------------
-# TO DO: Update the description of admixture.em.
-#
 # Estimate population-specific allele frequencies and admixture
 # proportions in unlabeled samples from genotypes. The non-optional
 # inputs are as follows:
@@ -490,8 +499,12 @@ admixture.em.update <- function (par, auxdata) {
 # Q[i,k] = 1 when z[i] = k, otherwise all the other entries are
 # exactly zero.
 #
+# Input 'e' is a model parameter that specifies the probability of a
+# genotype error. Input 'a' specifies the L0-penalty strength for Q. 
+# Larger values of 'a' encourage admixture estimates with more zeros.
+#
 # There are two variations to the M-step update for the Q matrix. When
-# the number of ancestral populations is small (k < 20), it is
+# the number of ancestral populations is small (K < 20), it is
 # feasible to compute the L0-penalized estimate exactly by
 # exhaustively calculating the posterior probability for each possible
 # choice of the nonzero admixture proportions. Setting exact.q = TRUE
@@ -501,22 +514,12 @@ admixture.em.update <- function (par, auxdata) {
 # = FALSE computes an approximate solution using a simulated annealing
 # algorithm. In this case, it is necessary to set input T. For an
 # explanation of input T, see function update.q.sparse.approx.
-#
-# The cg parameter specifies the M-step update for the F matrix. When
-# cg = FALSE, the binomial success rates are updated using the
-# standard M-step solution that is derived by finding the roots of the
-# partial derivatives of the expected complete log-likelihood. When cg
-# = TRUE, the standard M-step update is adjusted using the conjugate
-# gradient algorithm (specifically, using the Hestenes-Stiefel update
-# formula). In some cases, I've found that the conjugate gradient
-# upgrade can lead to improvements in the convergence rate of the EM
-# iterates.
 admixture.em <-
   function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL, tol = 1e-4,
             max.iter = 1e4, method = "squarem", exact.q = FALSE, T = 1,
             mc.cores = 1, trace = TRUE) {
 
-  # Get the number of samples (n)and the number of markers (p).
+  # Get the number of samples (n) and the number of markers (p).
   n <- nrow(X)
   p <- ncol(X)
 
