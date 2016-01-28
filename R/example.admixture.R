@@ -104,6 +104,8 @@ with(out.em$turboem,
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
+stop()
+
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING SQUAREM
 # ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")

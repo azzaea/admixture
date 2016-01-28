@@ -2,6 +2,7 @@
 // routines in R.
 #include <R.h>
 #include <Rinternals.h>
+#include <math.h>
 
 // FUNCTION DEFINITIONS
 // -----------------------------------------------------------------
@@ -52,15 +53,16 @@ SEXP genoprob_given_q_Call (SEXP fp, SEXP qp, SEXP ep, SEXP pxp) {
 // initialized to 0, and the population labels z should start at 0,
 // not 1.
 SEXP admixture_labeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP zp, SEXP ep,
-				   SEXP n0p, SEXP n1p) {
+				   SEXP loglp, SEXP n0p, SEXP n1p) {
 
   // Get the inputs.
-  double* X  = REAL(Xp);   // Genotype matrix.
-  double* F  = REAL(Fp);   // Allele frequency matrix.
-  double* z  = REAL(zp);   // Population indicators.
-  double  e  = *REAL(ep);  // Genotype error probability.
-  double* n0 = REAL(n0p);  // Expected counts of "0" allele.
-  double* n1 = REAL(n1p);  // Expected counts of "1" allele.
+  double* X    = REAL(Xp);    // Genotype matrix.
+  double* F    = REAL(Fp);    // Allele frequency matrix.
+  double* z    = REAL(zp);    // Population indicators.
+  double  e    = *REAL(ep);   // Genotype error probability.
+  double* logl = REAL(loglp); // Log-likelihood.
+  double* n0   = REAL(n0p);   // Expected counts of "0" allele.
+  double* n1   = REAL(n1p);   // Expected counts of "1" allele.
 
   // Get the number of samples (n) and the number of markers (p).
   SEXP     Xdim = getAttrib(Xp,R_DimSymbol);
@@ -77,6 +79,9 @@ SEXP admixture_labeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP zp, SEXP ep,
   double   f0, f1; // An allele frequency.
   double   w;      // Normalizing constant for posterior probabilities.
   R_xlen_t k;      // Population of origin.
+
+  // Initialize the calculation of the log-likelihood.
+  *logl = 0;
 
   // Intermediate quantities used to calculate the genotype likelihoods.
   double u[2];
@@ -120,6 +125,9 @@ SEXP admixture_labeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP zp, SEXP ep,
       // probabilities.
       w = r00 + r01 + r10 + r11;
 
+      // Add the normalizing constant to the log-likelihood.
+      *logl += log(w);
+
       // Add the posterior probabilities to the expected allele counts.
       n0[j + p*k] += 2*(r00 + r01)/w;
       n1[j + p*k] += 2*(r11 + r10)/w;
@@ -138,21 +146,23 @@ SEXP admixture_labeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP zp, SEXP ep,
 // Note that all the entries of input matrix m should be initialized
 // to 0.
 SEXP admixture_unlabeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP Qp, SEXP ep,
-				     SEXP mp, SEXP n0p, SEXP n1p, SEXP r00p, 
-				     SEXP r01p, SEXP r10p, SEXP r11p) {
+				     SEXP mp, SEXP n0p, SEXP n1p, SEXP loglp,
+				     SEXP r00p, SEXP r01p, SEXP r10p, 
+				     SEXP r11p) {
 
   // Get the inputs.
-  double* X   = REAL(Xp);   // Genotype matrix.
-  double* F   = REAL(Fp);   // Allele frequency matrix.
-  double* Q   = REAL(Qp);   // Admixture proportions matrix.
-  double  e   = *REAL(ep);  // Genotype error probability.
-  double* m   = REAL(mp);   // Expected population counts.
-  double* n0  = REAL(n0p);  // Expected counts of "0" allele.
-  double* n1  = REAL(n1p);  // Expected counts of "1" allele.
-  double* r00 = REAL(r00p); // Posterior probability of (0,0) genotype.
-  double* r01 = REAL(r01p); // Posterior probability of (0,1) genotype.
-  double* r10 = REAL(r10p); // Posterior probability of (1,0) genotype.
-  double* r11 = REAL(r11p); // Posterior probability of (1,1) genotype.
+  double* X    = REAL(Xp);    // Genotype matrix.
+  double* F    = REAL(Fp);    // Allele frequency matrix.
+  double* Q    = REAL(Qp);    // Admixture proportions matrix.
+  double  e    = *REAL(ep);   // Genotype error probability.
+  double* m    = REAL(mp);    // Expected population counts.
+  double* n0   = REAL(n0p);   // Expected counts of "0" allele.
+  double* n1   = REAL(n1p);   // Expected counts of "1" allele.
+  double* logl = REAL(loglp); // Log-likelihood.
+  double* r00  = REAL(r00p);  // Posterior probability of (0,0) genotype.
+  double* r01  = REAL(r01p);  // Posterior probability of (0,1) genotype.
+  double* r10  = REAL(r10p);  // Posterior probability of (1,0) genotype.
+  double* r11  = REAL(r11p);  // Posterior probability of (1,1) genotype.
 
   // Get the number of samples (n), the number of markers (p), and the
   // number of ancestral populations (K).
@@ -184,6 +194,9 @@ SEXP admixture_unlabeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP Qp, SEXP ep,
   // of the contributing ancestral populations (demes).
   int      nd;
   R_xlen_t demes[K];
+
+  // Initialize the calculation of the log-likelihood.
+  *logl = 0;
 
   // Repeat for each sample.
   for (i = 0; i < n; i++) {
@@ -269,6 +282,9 @@ SEXP admixture_unlabeled_Estep_Call (SEXP Xp, SEXP Fp, SEXP Qp, SEXP ep,
 	  w += 2*(r00[t] + r01[t] + r10[t] + r11[t]);
 	}
       }
+
+      // Add the normalizing constant to the log-likelihood.
+      *logl += log(w);
 
       // Add the (normalized) posterior probabilities to the expected
       // population counts and expected allele counts. The inner and

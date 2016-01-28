@@ -11,8 +11,8 @@
 #   update.q.sparse.approx.mc(M,x0,a,T,u,mc.cores)
 #   admixture.labeled.Estep.fast(X,F,z,e)
 #   admixture.labeled.Estep.mc(X,F,z,e,mc.cores)
-#   admixture.Estep.fast(X,F,Q,n0,n1,e)
-#   admixture.Estep.mc(X,F,Q,n0,n1,e,mc.cores)
+#   admixture.unlabeled.Estep.fast(X,F,Q,n0,n1,e)
+#   admixture.unlabeled.Estep.mc(X,F,Q,n0,n1,e,mc.cores)
 #   get.admixture.params(x,p,z,K)
 #   get.turboem.params(F,Q)
 #   admixture.em.update(par,auxdata)
@@ -217,10 +217,11 @@ admixture.labeled.Estep.fast <- function (X, F, z, e) {
   if (!is.double(F))
     stop("Input matrix F must be in double precision.")
 
-  # Initialize the expected allele counts.
-  n0 <- matrix(0,p,K)
-  n1 <- matrix(0,p,K)
-  
+  # Initialize the expected allele counts and the log-likelihood.
+  n0   <- matrix(0,p,K)
+  n1   <- matrix(0,p,K)
+  logl <- 0
+
   # Execute the C routine using the .Call interface, and return the
   # expected allele counts in a list object. The main reason for using
   # .Call interface is that there is less of a constraint on the size
@@ -228,13 +229,14 @@ admixture.labeled.Estep.fast <- function (X, F, z, e) {
   # n1. Note that I need to subtract 1 from the indices because R
   # vectors start at 1, and C arrays start at 0.
   out <- .Call("admixture_labeled_Estep_Call",
-               X  = X,              # Genotype matrix.
-               F  = F,              # Allele frequency matrix.
-               z  = as.double(z-1), # Ancestral population labels.
-               e  = as.double(e),   # Genotype error probability.
-               n0 = n0,             # Expected counts of "0" allele.
-               n1 = n1)             # Expected counts of "1" allele.
-  return(list(n0 = n0,n1 = n1))
+               X    = X,              # Genotype matrix.
+               F    = F,              # Allele frequency matrix.
+               z    = as.double(z-1), # Ancestral population labels.
+               e    = as.double(e),   # Genotype error probability.
+               logl = logl,           # Log-likelihood.
+               n0   = n0,             # Expected counts of "0" allele.
+               n1   = n1)             # Expected counts of "1" allele.
+  return(list(n0 = n0,n1 = n1,logl = logl))
 }
 
 # ----------------------------------------------------------------------
@@ -253,8 +255,9 @@ admixture.labeled.Estep.mc <- function (X, F, z, e, mc.cores = 2) {
                     mc.cores = mc.cores)
   
     # Aggregate the outputs from the individual CPUs.
-    return(list(n0 = Reduce('+',lapply(out,function (x) x$n0)),
-                n1 = Reduce('+',lapply(out,function (x) x$n1))))
+    return(list(n0   = Reduce('+',lapply(out,function (x) x$n0)),
+                n1   = Reduce('+',lapply(out,function (x) x$n1)),
+                logl = Reduce('+',lapply(out,function (x) x$logl))))
   }
 }
 
@@ -276,7 +279,7 @@ admixture.labeled.Estep.mc <- function (X, F, z, e, mc.cores = 2) {
 # compiled from C code, using the .Call interface. For more details on
 # how to load the C function into R, see the comments accompanying
 # function admixture.labeled.Estep.fast.
-admixture.Estep.fast <- function (X, F, Q, n0, n1, e) {
+admixture.unlabeled.Estep.fast <- function (X, F, Q, n0, n1, e) {
 
   # Get the number of samples (n) and the number of ancestral
   # populations (K).
@@ -299,12 +302,14 @@ admixture.Estep.fast <- function (X, F, Q, n0, n1, e) {
   # Initialize the expected population counts.
   m <- matrix(0,n,K)
 
-  # Initialize storage for the posterior probabilities of the hidden
-  # (phased) genotypes x population indicators.
-  r00 <- matrix(0,K,K)
-  r01 <- matrix(0,K,K)
-  r10 <- matrix(0,K,K)
-  r11 <- matrix(0,K,K)
+  # Initialize storage for the log-likelihood and the posterior
+  # probabilities of the hidden (phased) genotypes x population
+  # indicators.
+  r00  <- matrix(0,K,K)
+  r01  <- matrix(0,K,K)
+  r10  <- matrix(0,K,K)
+  r11  <- matrix(0,K,K)
+  logl <- 0
 
   # Execute the C routine using the .Call interface, and return the
   # sufficient statistics in a list object. The main reason for using
@@ -313,27 +318,28 @@ admixture.Estep.fast <- function (X, F, Q, n0, n1, e) {
   # and n1. Note that I need to subtract 1 from the indices because R
   # vectors start at 1, and C arrays start at 0.
   out <- .Call("admixture_unlabeled_Estep_Call",
-               X   = X,             # Genotype matrix.
-               F   = F,             # Allele frequency matrix.
-               Q   = Q,             # Admixture proportions matrix.
-               e   = as.double(e),  # Genotype error probability.
-               m   = m,             # Expected population counts.
-               n0  = n0,            # Expected counts of "0" allele.
-               n1  = n1,            # Expected counts of "1" allele.
-               r00 = r00,           # Posterior probabilities.
-               r01 = r01,
-               r10 = r10,
-               r11 = r11)
-  return(list(m = m,n0 = n0,n1 = n1))
+               X    = X,             # Genotype matrix.
+               F    = F,             # Allele frequency matrix.
+               Q    = Q,             # Admixture proportions matrix.
+               e    = as.double(e),  # Genotype error probability.
+               m    = m,             # Expected population counts.
+               n0   = n0,            # Expected counts of "0" allele.
+               n1   = n1,            # Expected counts of "1" allele.
+               logl = logl,          # Log-likelihood.
+               r00  = r00,           # Posterior probabilities.
+               r01  = r01,
+               r10  = r10,
+               r11  = r11)
+  return(list(m = m,n0 = n0,n1 = n1,logl = logl))
 }
 
 # ----------------------------------------------------------------------
-# This is the multicore variant of admixture.Estep.fast.
-admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
+# This is the multicore variant of admixture.unlabeled.Estep.fast.
+admixture.unlabeled.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
 
   # Check the boundary condition when only 1 core is specified.
   if (mc.cores == 1)
-    return(admixture.Estep.fast(X,F,Q,n0,n1,e))
+    return(admixture.unlabeled.Estep.fast(X,F,Q,n0,n1,e))
   else {
     
     # Get the number of markers (p) and the number of ancestral
@@ -345,17 +351,19 @@ admixture.Estep.mc <- function (X, F, Q, n0, n1, e, mc.cores = 2) {
     # counts for each set of samples.
     N    <- matrix(0,p,K)
     rows <- distribute(1:nrow(X),mc.cores)
-    out  <- mclapply(rows,function(i)admixture.Estep.fast(X[i,],F,Q[i,],N,N,e),
-                     mc.cores = mc.cores)
+    out  <- mclapply(rows,
+              function (i) admixture.unlabeled.Estep.fast(X[i,],F,Q[i,],N,N,e),
+              mc.cores = mc.cores)
 
     # Aggregate the outputs from the individual CPUs. For the expected
     # allele counts (n0 and n1), also add the prior expected counts to
     # obtain the final result.
-    n0 <- n0 + Reduce('+',lapply(out,function (x) x$n0))
-    n1 <- n1 + Reduce('+',lapply(out,function (x) x$n1))
-    m  <- do.call(rbind,lapply(out,function (x) x$m))
+    n0   <- n0 + Reduce('+',lapply(out,function (x) x$n0))
+    n1   <- n1 + Reduce('+',lapply(out,function (x) x$n1))
+    m    <- do.call(rbind,lapply(out,function (x) x$m))
+    logl <- Reduce('+',lapply(out,function (x) x$logl))
     m[unlist(rows),] <- m
-    return(list(m = m,n0 = n0,n1 = n1))
+    return(list(m = m,n0 = n0,n1 = n1,logl = logl))
   }
 }
 
@@ -399,6 +407,43 @@ get.turboem.params <- function (F, Q)
   c(as.vector(logit(F)),as.vector(softmax.inverse.rows(Q)))
 
 # ----------------------------------------------------------------------
+# This function somputes the objective function---the negative marginal
+# log-liklihood---and is called by turboem in function admixture.em.
+admixture.loglikelihood <- function (par, auxdata) {
+
+  # Get the genotypes (X), ancestral population labels (z),
+  # user-specified model parameters (K, e), and EM algorithm settings
+  # (mc.cores).
+  X        <- auxdata$X
+  z        <- auxdata$z
+  K        <- auxdata$K
+  e        <- auxdata$e
+  mc.cores <- auxdata$mc.cores
+  rm(auxdata)
+  
+  # Get the number of markers.
+  p <- ncol(X)
+
+  # Get the set of samples that are labeled (i) and unlabeled (j).
+  i <- which(!is.na(z))
+  j <- which(is.na(z))
+
+  # Get the current estimates of the allele frequencies (F) and
+  # admixture proportions (Q).
+  out <- get.admixture.params(par,p,z,K) 
+  F   <- out$F
+  Q   <- out$Q
+  rm(out)
+
+  # Compute the negative (marginal) log-likelihood.
+  y <- admixture.unlabeled.Estep.mc(X[j,],F,Q[j,],matrix(0,p,K),
+                                    matrix(0,p,K),e,mc.cores)$logl
+  if (length(i) > 0)
+    y <- y + admixture.labeled.Estep.fast(X[i,],F,z[i],e)$logl
+  return(-y)
+}
+
+# ----------------------------------------------------------------------
 # This function implements the EM update called by turboem in function
 # admixture.em.
 admixture.em.update <- function (par, auxdata) {
@@ -423,6 +468,7 @@ admixture.em.update <- function (par, auxdata) {
   exact.q  <- auxdata$exact.q
   mc.cores <- auxdata$mc.cores
   rm(auxdata)
+  
   # Get the number of markers.
   p <- ncol(X)
 
@@ -446,7 +492,7 @@ admixture.em.update <- function (par, auxdata) {
     n0 <- matrix(eps,p,K)
     n1 <- matrix(eps,p,K)
   } else {
-    out <- admixture.labeled.Estep.mc(X[i,],F,z[i],e,mc.cores)
+    out <- admixture.labeled.Estep.fast(X[i,],F,z[i],e)
     n0  <- out$n0 + eps
     n1  <- out$n1 + eps
     rm(out)
@@ -454,7 +500,7 @@ admixture.em.update <- function (par, auxdata) {
   
   # Compute the expected allele counts and the expected population
   # counts in the unlabeled samples only.
-  out <- admixture.Estep.mc(X[j,],F,Q[j,],n0,n1,e,mc.cores)
+  out <- admixture.unlabeled.Estep.mc(X[j,],F,Q[j,],n0,n1,e,mc.cores)
   M   <- out$m
   n0  <- out$n0
   n1  <- out$n1
@@ -595,8 +641,10 @@ admixture.em <-
   # accelerated variant of the EM algorithm.
   out <- turboem(par = get.turboem.params(F,Q),method = method,
                  fixptfn = admixture.em.update,
+                 objfn = admixture.loglikelihood,
+                 pconstr = function (x) TRUE,
                  control.run = list(maxiter = max.iter,trace = trace,
-                   convfn.user = check.convergence),
+                   convfn.user = check.convergence,keep.objfval = TRUE),
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,u = u,
                    exact.q = exact.q,mc.cores = mc.cores))
   cat("\n")
