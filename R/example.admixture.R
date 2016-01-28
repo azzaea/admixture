@@ -97,20 +97,18 @@ geno.test[runif(n.test*p) < prop.na] <- NA
 cat("Computing maximum-likelihood admixture proportion estimates.\n")
 X <- rbind(geno.train,geno.test)
 z <- c(q.train %*% 1:K,rep(NA,n.test))
-out.em <- admixture.em(X,K,z,e = e,method = "squarem",tol = 1e-4,
+out.em <- admixture.em(X,K,z,e = e,method = "pem",tol = 1e-4,
                        mc.cores = mc.cores,trace = FALSE)
 with(out.em$turboem,
-     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+     cat(sprintf(paste("Parabolic EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
-
-stop()
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING SQUAREM
 # ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")
-out.sparse <- admixture.em(X,K,e = e,a = a,F = out.em$F,Q = out.em$Q,
-                           exact.q = FALSE,T = T,mc.cores = mc.cores,
+out.sparse <- admixture.em(X,K,e = e,a = a,exact.q = FALSE,T = T,
+                           mc.cores = mc.cores,method = "squarem",
                            tol = 1e-4,trace = FALSE)
 with(out.sparse$turboem,
      cat(sprintf(paste("SQUAREM made %d M-step updates, completing",

@@ -15,6 +15,7 @@
 #   admixture.unlabeled.Estep.mc(X,F,Q,n0,n1,e,mc.cores)
 #   get.admixture.params(x,p,z,K)
 #   get.turboem.params(F,Q)
+#   admixture.loglikelihood(par,auxdata)
 #   admixture.em.update(par,auxdata)
 #   admixture.em(X,K,z,e,a,F,Q,tol,max.iter,method,exact.q,T,mc.cores,trace)
 #
@@ -407,8 +408,10 @@ get.turboem.params <- function (F, Q)
   c(as.vector(logit(F)),as.vector(softmax.inverse.rows(Q)))
 
 # ----------------------------------------------------------------------
-# This function somputes the objective function---the negative marginal
-# log-liklihood---and is called by turboem in function admixture.em.
+# This function somputes the objective function---the negative
+# marginal log-liklihood---and is called by turboem in function
+# admixture.em. Note that this is currently only implemented for the
+# unpenalized estimation of admixture proportions (a = 0).
 admixture.loglikelihood <- function (par, auxdata) {
 
   # Get the genotypes (X), ancestral population labels (z),
@@ -638,15 +641,26 @@ admixture.em <-
   }
 
   # Fit the admixture model to data using the EM algorithm, or an
-  # accelerated variant of the EM algorithm.
-  out <- turboem(par = get.turboem.params(F,Q),method = method,
-                 fixptfn = admixture.em.update,
-                 objfn = admixture.loglikelihood,
-                 pconstr = function (x) TRUE,
-                 control.run = list(maxiter = max.iter,trace = trace,
-                   convfn.user = check.convergence,keep.objfval = TRUE),
-                 auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,u = u,
-                   exact.q = exact.q,mc.cores = mc.cores))
+  # accelerated variant of the EM algorithm. Note that the evaluation
+  # of the objective function (the negative log-likelihood) is only
+  # implemented for the unpenalized estimation of admixture
+  # proportions (a = 0).
+  if (a == 0)
+    out <- turboem(par = get.turboem.params(F,Q),method = method,
+                   fixptfn = admixture.em.update,
+                   objfn = admixture.loglikelihood,
+                   pconstr = function (x) TRUE,
+                   control.run = list(maxiter = max.iter,trace = trace,
+                     convfn.user = check.convergence,keep.objfval = TRUE),
+                   auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
+                     u = u,exact.q = exact.q,mc.cores = mc.cores))
+  else
+    out <- turboem(par = get.turboem.params(F,Q),method = method,
+                   fixptfn = admixture.em.update,
+                   control.run = list(maxiter = max.iter,trace = trace,
+                     convfn.user = check.convergence),
+                   auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
+                     u = u,exact.q = exact.q,mc.cores = mc.cores))
   cat("\n")
 
   # Return a list containing the estimated allele frequencies (F)
