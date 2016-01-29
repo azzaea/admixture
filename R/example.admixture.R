@@ -18,7 +18,7 @@ K        <- 20    # Number of ancestral populations.
 n        <- 100   # Number of single-origin training samples.
 prop.na  <- 0.01  # Proportion of genotypes that are missing.
 e        <- 0.01  # Probability of genotype error.
-a        <- 3e-3  # L0-penalty strength.
+a        <- 2e-3  # L0-penalty strength.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
 mc.cores <- 2     # Number of CPUs to use.
 
@@ -100,16 +100,16 @@ z <- c(q.train %*% 1:K,rep(NA,n.test))
 out.em <- admixture.em(X,K,z,e = e,method = "pem",tol = 1e-4,
                        mc.cores = mc.cores,trace = FALSE)
 with(out.em$turboem,
-     cat(sprintf(paste("Parabolic EM made %d M-step updates, completing",
+     cat(sprintf(paste("PEM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING SQUAREM
 # ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")
-out.sparse <- admixture.em(X,K,e = e,a = a,exact.q = FALSE,T = T,
-                           mc.cores = mc.cores,method = "squarem",
-                           tol = 1e-4,trace = FALSE)
+out.sparse <- admixture.em(X,K,z,e = e,a = a,F = out.em$F,Q = out.em$Q,
+                           exact.q = FALSE,T = T,mc.cores = mc.cores,
+                           method = "squarem",tol = 1e-4,trace = FALSE)
 with(out.sparse$turboem,
      cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
@@ -136,3 +136,4 @@ r <- table(factor(rowSums(q.test > 0.01)),
            factor(rowSums(out.sparse$Q[-(1:n),] > 0.01)))
 names(dimnames(r)) <- c("true","L0")
 print(r)
+ 
