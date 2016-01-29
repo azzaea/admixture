@@ -17,7 +17,7 @@ dyn.load("admixture.so")})
 p        <- 2000  # Number of (unlinked) markers.
 n        <- 500   # Number of samples.
 e        <- 0.01  # Probability of genotype error.
-a        <- 1e-4  # Strength of L0-penalty.
+a        <- 1e-3  # Strength of L0-penalty.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
 mc.cores <- 20    # Number of CPUs to use.
 
@@ -73,13 +73,13 @@ markers       <- which(r > 0 & r < 1)
 sim.data$geno <- sim.data$geno[,markers]
 rm(r,markers)
 
-# COMPUTE ADMIXTURE ESTIMATES USING SQUAREM
+# COMPUTE ADMIXTURE ESTIMATES USING TURBOEM
 # -----------------------------------------
 cat("Fitting admixture model to data.\n")
-out.em <- admixture.em(sim.data$geno,K,e = e,method = "pem",tol = 1e-4,
+out.em <- admixture.em(sim.data$geno,K,e = e,method = "squarem",tol = 1e-4,
                        mc.cores = mc.cores,trace = FALSE)
 with(out.em$turboem,
-     cat(sprintf(paste("Parabolic EM made %d M-step updates, completing",
+     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
@@ -96,7 +96,7 @@ rm(cols,i)
 # -------------------------------------------------
 cat("Fitting L0-penalized admixture model to data.\n")
 out.sparse <- admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                           F = out.em$F,Q = out.em$Q,method = "squareem",
+                           F = out.em$F,Q = out.em$Q,method = "squarem",
                            tol = 1e-4,mc.cores = mc.cores,trace = FALSE)
 with(out.sparse$turboem,
      cat(sprintf(paste("SQUAREM made %d M-step updates, completing",

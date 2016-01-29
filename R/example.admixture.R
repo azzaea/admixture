@@ -92,7 +92,7 @@ cat("Setting ",100*prop.na,"% of the genotypes to NA.\n",sep="")
 geno.train[runif(n*p) < prop.na]     <- NA
 geno.test[runif(n.test*p) < prop.na] <- NA
 
-# COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING SQUAREM
+# COMPUTE MAXIMUM-LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 cat("Computing maximum-likelihood admixture proportion estimates.\n")
 X <- rbind(geno.train,geno.test)
@@ -100,18 +100,18 @@ z <- c(q.train %*% 1:K,rep(NA,n.test))
 out.em <- admixture.em(X,K,z,e = e,method = "pem",tol = 1e-4,
                        mc.cores = mc.cores,trace = FALSE)
 with(out.em$turboem,
-     cat(sprintf(paste("PEM made %d M-step updates, completing",
+     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
-# COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING SQUAREM
+# COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")
 out.sparse <- admixture.em(X,K,z,e = e,a = a,F = out.em$F,Q = out.em$Q,
                            exact.q = FALSE,T = T,mc.cores = mc.cores,
                            method = "squarem",tol = 1e-4,trace = FALSE)
 with(out.sparse$turboem,
-     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
