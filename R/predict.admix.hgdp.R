@@ -81,7 +81,7 @@ Q0           <- read.table("../data/hgdp.admixture.K=7.admix",sep = " ",
 rownames(Q0) <- Q0$id
 Q0           <- as.matrix(Q0[-1])
 
-# COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING SQUAREM
+# COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 # For a random initialization of the admixture proportions instead of
 # initializing to the estimates from ADMIXTURE, set Q = NULL.
@@ -89,7 +89,7 @@ cat("Estimating admixture proportions in HGDP samples.\n")
 out <- admixture.em(geno,K,e = e,Q = Q0,method = "squarem",tol = 1e-4,
                     mc.cores = mc.cores,trace = FALSE)
 with(out$turboem,
-     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
+     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
                  fpeval,itr,runtime[,"elapsed"]/60)))
 
