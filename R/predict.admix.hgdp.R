@@ -61,6 +61,9 @@ e        <- 0.001  # Probability of a genotype error.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
 mc.cores <- 20     # Number of CPUs to use.
 
+# Which TurboEM algorithm to use.
+turboem.method <- "squarem"
+
 # The .traw file containing the genotypes of the HGDP samples.
 traw.file <- "hgdp.traw"
 
@@ -85,9 +88,10 @@ Q0           <- as.matrix(Q0[-1])
 # ------------------------------------------------------------
 # For a random initialization of the admixture proportions instead of
 # initializing to the estimates from ADMIXTURE, set Q = NULL.
-cat("Estimating admixture proportions in HGDP samples.\n")
-out <- admixture.em(geno,K,e = e,Q = Q0,method = "squarem",tol = 1e-4,
-                    mc.cores = mc.cores,trace = FALSE)
+cat("Estimating admixture proportions in HGDP samples using",
+    turboem.method,"algorithm.\n")
+out <- admixture.em(geno,K,e = e,method = turboem.method,Q = Q0.
+                    tol = 1e-4,mc.cores = mc.cores,trace = FALSE)
 with(out$turboem,
      cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
                        "after %d iterations and %0.1f min.\n"),
