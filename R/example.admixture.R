@@ -80,7 +80,7 @@ for (i in 1:n) {
 cat("Generating genotype data for test samples.\n")
 for (i in 1:n.test) {
 
-  # andomly sample the admixture proportions,
+  # Randomly sample the admixture proportions,
   k             <- sample(1:K,size = k.test[i],prob = p.deme)
   q.test[i,k]   <- 1/length(k)
   geno.test[i,] <- sample.genotypes(f,q.test[i,])

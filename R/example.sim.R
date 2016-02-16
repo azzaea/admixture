@@ -76,12 +76,12 @@ rm(r,markers)
 # COMPUTE ADMIXTURE ESTIMATES USING TURBOEM
 # -----------------------------------------
 cat("Fitting admixture model to data.\n")
-out.em <- admixture.em(sim.data$geno,K,e = e,method = "squarem",tol = 1e-4,
-                       mc.cores = mc.cores,trace = FALSE)
-with(out.em$turboem,
-     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
-                       "after %d iterations and %0.1f min.\n"),
-                 fpeval,itr,runtime[,"elapsed"]/60)))
+r <- system.time(out.em <- admixture.em(sim.data$geno,K,e = e,
+                                        mc.cores = mc.cores))
+with(out.em,
+     cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
+                 length(loglikelihood),r["elapsed"]/60)))
+rm(r)
 
 # Reorder the columns (ancestral populations) so that they best match
 # the ground-truth admixture proportions.
@@ -95,13 +95,13 @@ rm(cols,i)
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
 cat("Fitting L0-penalized admixture model to data.\n")
-out.sparse <- admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                           F = out.em$F,Q = out.em$Q,method = "squarem",
-                           tol = 1e-4,mc.cores = mc.cores,trace = FALSE)
-with(out.sparse$turboem,
-     cat(sprintf(paste("SQUAREM made %d M-step updates, completing",
-                       "after %d iterations and %0.1f min.\n\n"),
-                 fpeval,itr,runtime[,"elapsed"]/60)))
+r <- system.time(out.sparse <-
+       admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
+                    F = out.em$F,Q = out.em$Q,tol = 1e-4,mc.cores = mc.cores))
+with(out.sparse,
+     cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n\n",
+         length(loglikelihood),r["elapsed"]/60)))
+rm(r)
 
 # SUMMARIZE ACCURACY OF ADMIXTURE ESTIMATES
 # -----------------------------------------
