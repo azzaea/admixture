@@ -73,32 +73,18 @@ geno <- read.traw.file(traw.file)$geno
 # Initialize the random number generator.
 set.seed(seed)
 
-# LOAD ADMIXTURE OUTPUT
-# ---------------------
-# Load the admixture proportions computed using ADMIXTURE.
-Q0           <- read.table("../data/hgdp.admixture.K=7.admix",sep = " ",
-                           header = TRUE,stringsAsFactors = FALSE)
-rownames(Q0) <- Q0$id
-Q0           <- as.matrix(Q0[-1])
-
 # COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 # For a random initialization of the admixture proportions instead of
 # initializing to the estimates from ADMIXTURE, set Q = NULL.
-cat("Estimating admixture proportions in HGDP samples using Turbo-EM.\n")
-cat("ALGORITHM: 50 ITERATIONS OF QN, FOLLOWED BY DECME\n")
-out <- admixture.em(geno,K,e = e,mc.cores = mc.cores,trace = FALSE,
-                    init.iter = 50,method = "decme",tol = 0.01)
-with(out$turboem.refine,
-     cat(sprintf(paste("Turbo-EM made %d M-step updates, completing",
-                       "after %d iterations and %0.1f min.\n"),
-                 fpeval,itr,runtime[,"elapsed"]/60)))
+cat("Fitting admixture model to data.\n")
+r <- system.time(out <- admixture.em(geno,K,e = e,tol = 0.01,
+                                     mc.cores = mc.cores))
+with(out,
+     cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
+                 length(loglikelihood),r["elapsed"]/60)))
 
-stop()
-
-# COMPARE RESULT OF RUNNING ADMIXTURE AND EM ALGORITHM
-# ----------------------------------------------------
-cat(sprintf("Largest difference in admixture proportions is %0.3f.\n",
-            max(abs(Q0 - out$Q))))
-cat("Distribution of largest differences across all HGDP samples:\n")
-print(round(quantile(apply(abs(Q0 - out$Q),1,max),seq(0,1,0.1)),digits = 3))
+# SAVE RESULTS TO FILE
+# --------------------
+save(list = c("K","e","seed","out","r"),
+     file = "hgdp.out.RData")
