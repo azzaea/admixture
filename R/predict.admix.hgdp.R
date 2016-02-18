@@ -58,6 +58,7 @@ dyn.load("admixture.so")})
 # -----------------
 K        <- 7      # Number of ancestral populations.
 e        <- 0.001  # Probability of a genotype error.
+a        <- 1e-5   # Strength of L0-penalty.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
 mc.cores <- 20     # Number of CPUs to use.
 
@@ -77,14 +78,19 @@ set.seed(seed)
 # ------------------------------------------------------------
 # For a random initialization of the admixture proportions instead of
 # initializing to the estimates from ADMIXTURE, set Q = NULL.
+#
+# r <- system.time(out <- admixture.em(geno,K,e = e,tol = 0.01,
+#                                      mc.cores = mc.cores))
+#
 cat("Fitting admixture model to data.\n")
-r <- system.time(out <- admixture.em(geno,K,e = e,tol = 0.01,
-                                     mc.cores = mc.cores))
+r <- system.time(out <-
+       admixture.em(geno,K,e = e,a = a,tol = 0.01,exact.q = FALSE,T = T,
+                    mc.cores = mc.cores))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
 
 # SAVE RESULTS TO FILE
 # --------------------
-save(list = c("K","e","seed","out","r"),
-     file = "hgdp.out.RData")
+# save(list = c("K","e","seed","out","r"),
+#      file = "hgdp.out.RData")

@@ -97,7 +97,8 @@ rm(cols,i)
 cat("Fitting L0-penalized admixture model to data.\n")
 r <- system.time(out.sparse <-
        admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                    F = out.em$F,Q = out.em$Q,tol = 1e-4,mc.cores = mc.cores))
+                    F = out.em$F,Q = out.em$Q,init.iter = 5,
+                    mc.cores = mc.cores))
 with(out.sparse,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n\n",
          length(loglikelihood),r["elapsed"]/60)))

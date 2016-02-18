@@ -420,6 +420,7 @@ admixture.loglikelihood <- function (par, auxdata) {
   X        <- auxdata$X
   z        <- auxdata$z
   K        <- auxdata$K
+  a        <- auxdata$a
   e        <- auxdata$e
   mc.cores <- auxdata$mc.cores
   rm(auxdata)
@@ -443,6 +444,7 @@ admixture.loglikelihood <- function (par, auxdata) {
                                     matrix(0,p,K),e,mc.cores)$logl
   if (length(i) > 0)
     y <- y + admixture.labeled.Estep.fast(X[i,],F,z[i],e)$logl
+  y <- y - a*sum(Q > 0)  
   return(-y)
 }
 
@@ -642,52 +644,36 @@ admixture.em <-
     return(max(max(err$f),max(err$q)) < tol)
   }
 
-  # Fit the admixture model to data using the EM algorithm, or an
-  # accelerated variant of the EM algorithm. Note that the evaluation
-  # of the objective function (the negative log-likelihood) is only
-  # implemented for the unpenalized estimation of admixture
-  # proportions (a = 0).
-  if (a == 0) {
-
-    # Find a good initialization of the model parameters using the
-    # quasi-Newton acceleration of EM.
-    cat("Running",init.iter,"iterations of Quasi-Newton algorithm.\n")
-    out <- turboem(par = get.turboem.params(F,Q),method = "qn",
-                   fixptfn = admixture.em.update,
-                   objfn = admixture.loglikelihood,
-                   pconstr = function (x) TRUE,
-                   control.run = list(maxiter = init.iter,trace = FALSE,
-                     convtype = "objfn",tol = 1e-16,keep.objfval = TRUE),
-                   auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                     u = u,exact.q = exact.q,mc.cores = mc.cores))
-    cat("\n")
-    par.init      <- as.vector(out$pars)
-    loglikelihood <- (-out$trace.objfval[[1]]$trace)
-    rm(out)
+  # Find a good initialization of the model parameters using the
+  # quasi-Newton acceleration of EM.
+  cat("Running",init.iter,"iterations of Quasi-Newton algorithm.\n")
+  out <- turboem(par = get.turboem.params(F,Q),method = "qn",
+                 fixptfn = admixture.em.update,
+                 objfn = admixture.loglikelihood,
+                 pconstr = function (x) TRUE,
+                 control.run = list(maxiter = init.iter,trace = FALSE,
+                   convtype = "objfn",tol = 1e-16,keep.objfval = TRUE),
+                 auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
+                   u = u,exact.q = exact.q,mc.cores = mc.cores))
+  cat("\n")
+  par.init      <- as.vector(out$pars)
+  loglikelihood <- (-out$trace.objfval[[1]]$trace)
+  rm(out)
     
-    # After having identified a good initialization of the model
-    # parameters using the quasi-Newton algorithm, continue to
-    # optimize the model parameters using the Dynamic ECME algorithm.
-    cat("Running Dynamic ECME algorithm until convergence.\n")
-    out <- turboem(par = par.init,method = "decme",
-                   fixptfn = admixture.em.update,
-                   objfn = admixture.loglikelihood,
-                   pconstr = function (x) TRUE,
-                   boundary = function (par, dr) c(-1e8,1e8),
-                   control.run = list(maxiter = max.iter,trace = FALSE,
-                     convtype = "objfn",tol = n*tol,keep.objfval = TRUE),
-                   auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                     u = u,exact.q = exact.q,mc.cores = mc.cores))
-    loglikelihood <- c(loglikelihood,-out$trace.objfval[[1]]$trace)
-  } else {
-    out <- turboem(par = get.turboem.params(F,Q),method = "squarem",
-                   fixptfn = admixture.em.update,
-                   control.run = list(maxiter = max.iter,trace = FALSE,
-                     convfn.user = check.convergence),
-                   auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                     u = u,exact.q = exact.q,mc.cores = mc.cores))
-    loglikelihood <- rep(NA,out$itr)
-  }
+  # After having identified a good initialization of the model
+  # parameters using the quasi-Newton algorithm, continue to optimize
+  # the model parameters using the Dynamic ECME algorithm.
+  cat("Running Dynamic ECME algorithm until convergence.\n")
+  out <- turboem(par = par.init,method = "decme",
+                 fixptfn = admixture.em.update,
+                 objfn = admixture.loglikelihood,
+                 pconstr = function (x) TRUE,
+                 boundary = function (par, dr) c(-1e8,1e8),
+                 control.run = list(maxiter = max.iter,trace = FALSE,
+                   convtype = "objfn",tol = n*tol,keep.objfval = TRUE),
+                 auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
+                   u = u,exact.q = exact.q,mc.cores = mc.cores))
+  loglikelihood <- c(loglikelihood,-out$trace.objfval[[1]]$trace)
   cat("\n")
   par <- as.vector(out$pars)
   rm(out)
