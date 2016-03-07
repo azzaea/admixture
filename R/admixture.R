@@ -408,7 +408,7 @@ get.turboem.params <- function (F, Q)
   c(as.vector(logit(F)),as.vector(softmax.inverse.rows(Q)))
 
 # ----------------------------------------------------------------------
-# This function somputes the objective function---the negative
+# This function computes the objective function---the negative
 # marginal log-liklihood---and is called by turboem in function
 # admixture.em. Note that this is currently only implemented for the
 # unpenalized estimation of admixture proportions (a = 0).
@@ -470,6 +470,8 @@ admixture.em.update <- function (par, auxdata) {
   a        <- auxdata$a
   T        <- auxdata$T
   u        <- auxdata$u
+  update.F <- auxdata$update.F
+  update.Q <- auxdata$update.Q
   exact.q  <- auxdata$exact.q
   mc.cores <- auxdata$mc.cores
   rm(auxdata)
@@ -515,16 +517,19 @@ admixture.em.update <- function (par, auxdata) {
   # ------
   # Adjust the allele frequencies using the standard M-step
   # update.
-  F <- n1/(n0 + n1)
+  if (update.F)
+    F <- n1/(n0 + n1)
 
   # Update the admixture proportions in the unlabeled samples.
-  if (a == 0)
-    Q[j,] <- M/rowSums(M)
-  else if (exact.q)
-    Q[j,] <- update.q.sparse.exact(M,a)
-  else
-    Q[j,] <- update.q.sparse.approx.mc(M,Q[j,] > zero,a,T,u,mc.cores)
-
+  if (update.Q) {
+    if (a == 0)
+      Q[j,] <- M/rowSums(M)
+    else if (exact.q)
+      Q[j,] <- update.q.sparse.exact(M,a)
+    else
+      Q[j,] <- update.q.sparse.approx.mc(M,Q[j,] > zero,a,T,u,mc.cores)
+  }
+  
   # Output the M-step update.
   cat("*")
   return(get.turboem.params(F,Q[j,]))
@@ -571,8 +576,9 @@ admixture.em.update <- function (par, auxdata) {
 # explanation of input T, see function update.q.sparse.approx.
 admixture.em <-
   function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-            init.iter = 40, max.iter = 1e4,tol = 0.001, exact.q = FALSE,
-            T = 1, mc.cores = 1) {
+            update.F = TRUE, update.Q = TRUE, init.iter = 40,
+            max.iter = 1e4, tol = 0.001, exact.q = FALSE, T = 1,
+            mc.cores = 1) {
 
   # Get the number of samples (n) and the number of markers (p).
   n <- nrow(X)
@@ -614,35 +620,38 @@ admixture.em <-
   else
     u <- NULL
 
-  # Define a function to check convergence of the iterates. Currently
-  # this is only used for running the SQUAREM algorithm when the
-  # L0-penalty term is included (i.e., a > 0).
-  check.convergence <- function (old, new) {
-
-    # Get some of the inputs to function admixture.em.    
-    tol <- get("tol",envir = environment(convfn.user))
-    p   <- get("p",envir = environment(convfn.user))
-    K   <- get("K",envir = environment(convfn.user))
-    z   <- get("z",envir = environment(convfn.user))
-
-    # Get the previous parameter estimates.
-    out <- get.admixture.params(old,p,z,K) 
-    F0  <- out$F
-    Q0  <- out$Q
-    rm(out)
-    
-    # Get the current parameter estimates.
-    out <- get.admixture.params(new,p,z,K) 
-    F   <- out$F
-    Q   <- out$Q
-    rm(out)
-    
-    # Check convergence.
-    err <- list(f = max(abs(F0 - F)),
-                q = max(abs(Q0 - Q)))
-    cat("*")
-    return(max(max(err$f),max(err$q)) < tol)
-  }
+  # NOTE: This function is currently not used, but perhaps it will be
+  # useful in the future, so I am keeping this code snippet here.
+  #
+  # Define a function to check convergence of the
+  # iterates. Currently this is only used for running the SQUAREM
+  # algorithm when the L0-penalty term is included (i.e., a > 0).
+  # check.convergence = function (old, new) {
+  # 
+  #   # Get some of the inputs to function admixture.em.    
+  #   tol <- get("tol",envir = environment(convfn.user))
+  #   p   <- get("p",envir = environment(convfn.user))
+  #   K   <- get("K",envir = environment(convfn.user))
+  #   z   <- get("z",envir = environment(convfn.user))
+  # 
+  #   # Get the previous parameter estimates.
+  #   out <- get.admixture.params(old,p,z,K) 
+  #   F0  <- out$F
+  #   Q0  <- out$Q
+  #   rm(out)
+  #   
+  #   # Get the current parameter estimates.
+  #   out <- get.admixture.params(new,p,z,K) 
+  #   F   <- out$F
+  #   Q   <- out$Q
+  #   rm(out)
+  #   
+  #   # Check convergence.
+  #   err <- list(f = max(abs(F0 - F)),
+  #               q = max(abs(Q0 - Q)))
+  #   cat("*")
+  #   return(max(max(err$f),max(err$q)) < tol)
+  # }
 
   # Find a good initialization of the model parameters using the
   # quasi-Newton acceleration of EM.
@@ -654,7 +663,8 @@ admixture.em <-
                  control.run = list(maxiter = init.iter,trace = FALSE,
                    convtype = "objfn",tol = 1e-16,keep.objfval = TRUE),
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                   u = u,exact.q = exact.q,mc.cores = mc.cores))
+                   u = u,update.F = update.F,update.Q = update.Q,
+                   exact.q = exact.q,mc.cores = mc.cores))
   cat("\n")
   par.init      <- as.vector(out$pars)
   loglikelihood <- (-out$trace.objfval[[1]]$trace)
@@ -672,7 +682,8 @@ admixture.em <-
                  control.run = list(maxiter = max.iter,trace = FALSE,
                    convtype = "objfn",tol = n*tol,keep.objfval = TRUE),
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                   u = u,exact.q = exact.q,mc.cores = mc.cores))
+                   u = u,update.F = update.F,update.Q = update.Q,
+                   exact.q = exact.q,mc.cores = mc.cores))
   loglikelihood <- c(loglikelihood,-out$trace.objfval[[1]]$trace)
   cat("\n")
   par <- as.vector(out$pars)
