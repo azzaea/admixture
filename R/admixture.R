@@ -528,6 +528,9 @@ admixture.em.update <- function (par, auxdata) {
       Q[j,] <- update.q.sparse.exact(M,a)
     else
       Q[j,] <- update.q.sparse.approx.mc(M,Q[j,] > zero,a,T,u,mc.cores)
+
+    # *** TEMPORARY ***
+    # Q <- pmin(pmax(Q,1e-5),1 - 1e-5)
   }
   
   # Output the M-step update.
