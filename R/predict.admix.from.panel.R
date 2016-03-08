@@ -1,8 +1,5 @@
 # TO DO: Explain what this script does, and give instructions on how
-# to use it.
-#
-# Add note here about ADMIXTURE with .bed files.
-#
+# to use it. Also, add note here about ADMIXTURE with .bed files.
 suppressPackageStartupMessages({
 library(parallel)
 library(data.table)
@@ -20,11 +17,10 @@ e        <- 0.001  # Probability of a genotype error.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
 mc.cores <- 20     # Number of CPUs to use.
 
-# The output from ADMIXTURE containing allele frequency estimates for
-# each ancestral population.
+# These variables specify the input files: the output from ADMIXTURE
+# containing allele frequency estimates for each ancestral population,
+# and the .traw file containing the genotype data.
 freq.file <- "1kg_hgdp.7.P"
-
-# The .traw file containing the genotypes.
 traw.file <- "1kg_hgdp_test.traw"
 
 # LOAD GENOTYPES
@@ -49,9 +45,8 @@ set.seed(seed)
 # COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 cat("Fitting admixture model to data.\n")
-r <- system.time(out <-
-       admixture.em(geno,K,e = e,F = F,update.F = FALSE,init.iter = 10,
-                    mc.cores = mc.cores))
+r <- system.time(out <- admixture.em(geno,K,e = e,F = F,update.F = FALSE,
+                                     init.iter = 10,mc.cores = mc.cores))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))

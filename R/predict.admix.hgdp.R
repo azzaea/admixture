@@ -76,8 +76,8 @@ set.seed(seed)
 # COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 cat("Fitting admixture model to data.\n")
-r <- system.time(out <-
-       admixture.em(geno,K,e = e,tol = 0.01,mc.cores = mc.cores))
+r <- system.time(out <- admixture.em(geno,K,e = e,tol = 0.01,
+                                     mc.cores = mc.cores))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))

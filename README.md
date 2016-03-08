@@ -3,7 +3,7 @@
 
 # admixture
 
-*A simple EM implementation of the
+*A simple accelerated EM implementation of the
 [ADMIXTURE](http://dx.doi.org/10.1101/gr.094052.109) model in
 R, plus extensions.*
 
@@ -25,7 +25,7 @@ maximization (EM) algorithm. (See
 extremely simple, or "bare bones", implementation that actually works,
 albeit slowly!) I use the
 [turboEM](http://cran.r-project.org/package=turboEM) library to
-improve the slow convergence of EM.
+improve the very slow convergence of EM.
 
 The ADMIXTURE software is implemented using a quasi-Newton method, and
 will typically converge much more quickly to a solution than the EM
@@ -71,14 +71,12 @@ proportions. In this example, all the samples are unlabeled.
 
 Script [predict.admix.hgdp.R](R/predict.admix.hgdp.R) uses
 admixture.em to estimate admixture proportions in the Human Genome
-Diversity Panel (HGDP). If the admixture proportions are initialized
-to the ADMIXTURE estimates (Q0), the EM algorithm outputs nearly the
-same solution; the largest absolute difference in all the admixture
-proportions is 1.2%. With a random initialization, the EM algorithm is
-still much slower than ADMIXTURE; in my trials, it takes about 10
-times longer for the EM algrotihm to run. For instructions on
-obtaining the HGDP genotype data, see the comments at the top of this
-R script.
+Diversity Panel (HGDP). The turboEM algorithm is still much slower
+than ADMIXTURE; in my experiments, ADMIXTURE is at least 10 times
+faster. For instructions on obtaining the HGDP genotype data, see the
+comments at the top of this R script.
+
+Script [](R/)
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
@@ -90,8 +88,9 @@ genotypes.
 #### Usage
 
     admixture.em(X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-					tol = 1e-4, max.iter = 1e4, method = "squarem",
-					exact.q = FALSE, T = 1, mc.cores = 1, trace = TRUE)
+	            update.F = TRUE, update.Q = TRUE, init.iter = 40,
+				max.iter = 1e4, tol = 0.001, exact.q = FALSE, T = 1,
+				mc.cores = 1)
 
 #### Arguments
 				 
