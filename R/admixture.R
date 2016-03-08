@@ -17,7 +17,8 @@
 #   get.turboem.params(F,Q)
 #   admixture.loglikelihood(par,auxdata)
 #   admixture.em.update(par,auxdata)
-#   admixture.em(X,K,z,e,a,F,Q,init.iter,max.iter,tol,exact.q,T,mc.cores)
+#   admixture.em(X,K,z,e,a,F,Q,update.F,update.Q,init.iter,max.iter,
+#                tol,exact.q,T,mc.cores)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------

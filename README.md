@@ -58,11 +58,12 @@ Before using any of the functions in R, build the the shared object
     R CMD SHLIB mcmc.c
     R CMD SHLIB admixture.c
 
-I have written three scripts to demonstrate usage of the EM algorithm.
+I have written four scripts to demonstrate usage of the EM algorithm.
 
 Script [example.admixture.R](R/example.admixture.R) uses the EM
-algorithm (function **admixture.em**) to predict admixture proportions
-when we have a reference set of labeled, single-origin individuals.
+algorithm (function <code>admixture.em</code>) to predict admixture
+proportions when we have a reference set of labeled, single-origin
+individuals.
 
 Script [example.sim.R](R/example.sim.R) evaluates accuracy of the
 admixture estimates in simulated genotype data, with and without the
@@ -76,7 +77,14 @@ than ADMIXTURE; in my experiments, ADMIXTURE is at least 10 times
 faster. For instructions on obtaining the HGDP genotype data, see the
 comments at the top of this R script.
 
-Script [](R/)
+Script [predict.admix.from.panel.R](R/predict.admix.from.panel.R)
+demonstrates how the EM algorithm can be used together with a
+previously computed set of allele frequencies (the "panel") to project
+a set of samples onto the K ancestral populations. The example
+provided uses the 1000 Genomes and HGDP data set compiled for a
+workshop presented at Stanford. See
+[here](http://github.com/Ancestry/cehg16-workshop) to download these
+data.
 
 ![Admixture estimates in simulated genotype data](example-sim-error.gif)
 
@@ -94,70 +102,87 @@ genotypes.
 
 #### Arguments
 				 
-Input **X** is an n x p genotype matrix, where n is the number of
-samples and p is the number of biallic genetic markers. Genotypes are
-represented as allele counts, so all entries must be 0, 1 or
-2. Missing values (NA) are also allowed.
+Input <code>X</code> is an n x p genotype matrix, where n is the
+number of samples and p is the number of biallic genetic
+markers. Genotypes are represented as allele counts, so all entries
+must be 0, 1 or 2. Missing values (NA) are also allowed.
 
-Input **K** is a model parameter specifying the number of ancestral
-populations.
+Input <code>K</code> is a model parameter specifying the number of
+ancestral populations.
 
-Input **z** is a vector giving the population of origin (an integer
-between 1 and K) for each of the samples, or NA is the sample is
-unlabeled. If z is set to NULL, or is not specified, all samples are
-treated as unlabeled.
+Input <code>z</code> is a vector giving the population of origin (an
+integer between 1 and K) for each of the samples, or NA is the sample
+is unlabeled. If z is set to NULL, or is not specified, all samples
+are treated as unlabeled.
 
-Input **e** specifies the probably of a genotype error. It must be a
-positive number. It can be small (e.g., 1e-6), but note that small
-values tend to increase convergence time of the EM algorithm.
+Input <code>e</code> specifies the probably of a genotype error. It
+must be a positive number. It can be small (e.g., 1e-6), but note that
+small values tend to increase convergence time of the EM algorithm.
 
-Input **a** specifies the strength of the L0-penalty term that
-encourages sparsity in the admixture estimates. By default, a = 0,
-which means that the L0-penalty term has no effect, and the
+Input </code>a</code> specifies the strength of the L0-penalty term
+that encourages sparsity in the admixture estimates. By default, a =
+0, which means that the L0-penalty term has no effect, and the
 maximum-likelihood estimate is returned. I have implemented a
 procedure for choosing the L0-penalty strength using cross-validation,
 but this procedure isn't demonstrated yet in this code. For some
-details on this cross-validation, see function **calc.geno.error**.
+details on this cross-validation, see function
+<code>calc.geno.error</code>.
 
-Inputs **F** and **Q** are the initial estimates of the population
-allele frequencies and admixture proportions, respectively. If these
-inputs aren't specified, these model parameters are randomly
-initialized. For more details on F and Q, see below.
+Inputs <code>F</code> and <code>Q</code> are the initial estimates of
+the population allele frequencies and admixture proportions,
+respectively. If these inputs aren't specified, these model parameters
+are randomly initialized. By default, both <code>F</code> and
+<code>Q</code> are fitted to the data. However, it is possible to fix
+either the allele frequencies or admixture proportions by setting
+<code>update.F = FALSE</code> or <code>update.Q = FALSE</code>. For
+more details on F and Q, see below.
 
-Input argument **tol** specifies the convergence tolerance of the EM
-iterates. Convergence is reached when the maximum absolute difference
-between the parameters at two successive iterations is less than the
-specified tolerance. Input **max.iter** specifies the maximum number
-of turboEM iterations.
+admixture.em <-
+  function (
+            init.iter = 40,
+            max.iter = 1e4, tol = 0.001) {
 
-There are two variations to the M-step update for Q. When the number
-of ancestral populations is small (e.g., K < 20), it is feasible to
-compute the optimal solution exactly by exhaustively calculating the
-posterior probability for each possible choice of nonzero admixture
-proportions.  Setting **exact.q = TRUE** activates this
-option. However, for larger K, it is not feasible to compute the exact
-solution because the number of ways of choosing nonzero admixture
-proportions is too large. Instead, setting **exact.q = FALSE**
-computes an approximate solution using simulated annealing. In this
-case, it is necessary to set input **T**. For an explanation of T, see
-function **update.q.sparse.approx**.
+Inputs <code>init.iter</code>, <code>max.iter</code> and
+<code>tol</code> control the optimization settings. The optimization
+is performed in two stages: the first stage finds a good global
+initialization of the model parameters by making a fixed number of EM
+updates that are scaled by the quasi-Newton approximation to the
+Hessian (<code>method = "qn"</code> in turboem); the second stage uses
+the DECME method (<code>method = "decme"</code> in turboem) to
+converge to a fixed point of the objective function. The convergence
+tolerance of the second stage is controlled by <code>tol<code>;
+specifically, the algorithm terminates when the difference between the
+log-likelihood between two successive iterations is less than
+<code>n*tol</code>, where n is the number of samples. Input
+<code>max.iter</code> specifies the maximum number of iterations in
+the second stage.
 
-Input argument "method" specifies which turboEM algorithm to use. For
-now, only the "em" and "squarem" algorithms are allowed. See
-**help(turboem)** for more details.
+There are two variations to the M-step update for Q when a > 0. When
+the number of ancestral populations is small (e.g., K < 20), it is
+feasible to compute the optimal solution exactly by exhaustively
+calculating the posterior probability for each possible choice of
+nonzero admixture proportions. Setting <code>exact.q = TRUE</code>
+activates this option. However, for larger K, it is not feasible to
+compute the exact solution because the number of ways of choosing
+nonzero admixture proportions is too large. Instead, setting
+<code>exact.q = FALSE</code> computes an approximate solution using
+simulated annealing. In this case, it is necessary to set input
+<code>T</code>. For an explanation of T, see function
+<code>update.q.sparse.approx</code>.
 
-Finally, **mc.cores** is the input to mclapply specifying the number
-of cores to use in the multicore versions of the E and M-steps.
+Finally, <code>mc.cores</code> is the input to mclapply specifying the
+number of cores to use in the multicore versions of the E and M-steps.
 
 #### Value
 
 The return value is a list with three elements:
 
-**F**, the p x K matrix of population-specific allele frequency
-estimates;
+<code>F</code>, the p x K matrix of population-specific allele
+frequency estimates;
 
-**Q**, the n x K matrix of admixture proportions, where n is the
+<code>Q</code>, the n x K matrix of admixture proportions, where n is the
 number of individuals (samples). For labeled samples, the admixture
 proportions are Q[i,k] = 1 for z[i] = k.
 
-**turboem**, the output from function turboem.
+<code>loglikelihood<code>, the log-likelihood at each iteration of
+TurboEM.
