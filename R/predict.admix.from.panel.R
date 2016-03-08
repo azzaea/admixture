@@ -1,5 +1,23 @@
-# TO DO: Explain what this script does, and give instructions on how
-# to use it. Also, add note here about ADMIXTURE with .bed files.
+# This script demonstrates application of the EM algorithm together
+# with a previously computed set of allele frequencies to "project" a
+# set of samples onto the K ancestral populations; that is, we compute
+# admixture estimates conditioned on the allele frequencies for a set
+# of K populations. This reproduces the -P option that was introduced
+# in version 1.3.0 of the ADMIXTURE software.
+#
+# To run this script, you can find the allele frequencies file
+# (1kg_hgdp.7.P) from the github repository we created for a recent
+# workshop presented at Stanford:
+#
+#   http://github.com/Ancestry/cehg16-workshop
+#
+# To obtain the genotype data file (1kg_hgdp_test.traw), download the
+# files from the same github repository, including file
+# 1kg_hgdp_test.bed. Once you have the .bed file, convert this to the
+# TRAW format using the following PLINK command:
+#
+#   plink2 -bfile 1kg_hgdp_test --recode A-transpose spacex
+#  
 suppressPackageStartupMessages({
 library(parallel)
 library(data.table)

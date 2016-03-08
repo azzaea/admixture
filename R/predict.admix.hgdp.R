@@ -39,8 +39,8 @@
 # (r^2) of 0.2. The list of 159,846 SNPs obtained after these
 # filtering steps is provided in the "data" subdirectory.
 #
-#  /DNAData/bin/plink2 -tfile hgdp --recode A-transpose spacex \
-#     --chr 1-22 --extract hgdp-markers-pruned.txt --out hgdp2
+#  plink2 -tfile hgdp --recode A-transpose spacex --chr 1-22 \
+#    --extract hgdp-markers-pruned.txt --out hgdp2
 #  mv hgdp2.traw hgdp.traw
 #
 suppressPackageStartupMessages({
