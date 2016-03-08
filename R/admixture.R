@@ -536,9 +536,6 @@ admixture.em.update <- function (par, auxdata) {
 }
 
 # ----------------------------------------------------------------------
-#
-# TO DO: Update these comments.
-#
 # Estimate population-specific allele frequencies and admixture
 # proportions in unlabeled samples from genotypes. The non-optional
 # inputs are as follows:
@@ -550,7 +547,8 @@ admixture.em.update <- function (par, auxdata) {
 #
 #   z   vector giving the population of origin for each of the samples
 #       (an integer between 1 and K), or NA if the sample is unlabeled.
-#       If set to NULL, or not specified, all samples are unlabeled.
+#       If set to NULL, or not specified, all samples are unlabeled
+#       (this is the default).
 #
 # The return value is a list with two list elements: F, the p x k
 # matrix of population-specific allele frequency estimates; and Q, the
@@ -665,9 +663,9 @@ admixture.em <-
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
                    u = u,update.F = update.F,update.Q = update.Q,
                    exact.q = exact.q,mc.cores = mc.cores))
-  cat("\n")
   par.init      <- as.vector(out$pars)
   loglikelihood <- (-out$trace.objfval[[1]]$trace)
+  cat("\n")
   rm(out)
     
   # After having identified a good initialization of the model
@@ -684,9 +682,9 @@ admixture.em <-
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
                    u = u,update.F = update.F,update.Q = update.Q,
                    exact.q = exact.q,mc.cores = mc.cores))
+  par           <- as.vector(out$pars)
   loglikelihood <- c(loglikelihood,-out$trace.objfval[[1]]$trace)
   cat("\n")
-  par <- as.vector(out$pars)
   rm(out)
 
   # Return a list containing the estimated allele frequencies (F)
