@@ -72,17 +72,16 @@ proportions. In this example, all the samples are unlabeled.
 
 Script [predict.admix.hgdp.R](R/predict.admix.hgdp.R) uses
 admixture.em to estimate admixture proportions in the Human Genome
-Diversity Panel (HGDP). The turboEM algorithm is still much slower
-than ADMIXTURE; in my experiments, ADMIXTURE is at least 10 times
+Diversity Panel (HGDP). ADMIXTURE is still much faster than the
+turboEM algorithm; in my experiments, ADMIXTURE is at least 10 times
 faster. For instructions on obtaining the HGDP genotype data, see the
 comments at the top of this R script.
 
 Script [predict.admix.from.panel.R](R/predict.admix.from.panel.R)
 demonstrates how the EM algorithm can be used together with a
-previously computed set of allele frequencies (the "panel") to project
-a set of samples onto the K ancestral populations. The example
-provided uses the 1000 Genomes and HGDP data set compiled for a
-workshop presented at Stanford. See
+previously computed set of allele frequencies (this is the "panel") to
+project a set of samples onto the K ancestral populations. The example
+provided uses a combined panel of 1000 Genomes and HGDP data. See
 [here](http://github.com/Ancestry/cehg16-workshop) to download these
 data.
 
@@ -90,8 +89,8 @@ data.
 
 ### The admixture.em function
 
-Estimate admixture proportions in unlabeled samples from their
-genotypes.
+Estimate admixture proportions in labeled and unlabeled samples from
+their genotypes.
 
 #### Usage
 
@@ -131,16 +130,10 @@ details on this cross-validation, see function
 Inputs <code>F</code> and <code>Q</code> are the initial estimates of
 the population allele frequencies and admixture proportions,
 respectively. If these inputs aren't specified, these model parameters
-are randomly initialized. By default, both <code>F</code> and
-<code>Q</code> are fitted to the data. However, it is possible to fix
-either the allele frequencies or admixture proportions by setting
+are randomly initialized. It is possible to keep either the allele
+frequencies or admixture proportions constant by setting
 <code>update.F = FALSE</code> or <code>update.Q = FALSE</code>. For
 more details on F and Q, see below.
-
-admixture.em <-
-  function (
-            init.iter = 40,
-            max.iter = 1e4, tol = 0.001) {
 
 Inputs <code>init.iter</code>, <code>max.iter</code> and
 <code>tol</code> control the optimization settings. The optimization
