@@ -141,9 +141,9 @@ is performed in two stages: the first stage finds a good global
 initialization of the model parameters by making a fixed number of EM
 updates that are scaled by the quasi-Newton approximation to the
 Hessian (<code>method = "qn"</code> in turboem); the second stage uses
-the DECME method (<code>method = "decme"</code> in turboem) to
+the DECME method (<code>method = "decme"</code> in turboem) to quickly
 converge to a fixed point of the objective function. The convergence
-tolerance of the second stage is controlled by <code>tol<code>;
+tolerance of the second stage is controlled by <code>tol</code>;
 specifically, the algorithm terminates when the difference between the
 log-likelihood between two successive iterations is less than
 <code>n*tol</code>, where n is the number of samples. Input
