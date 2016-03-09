@@ -145,7 +145,7 @@ the DECME method (<code>method = "decme"</code> in turboem) to quickly
 converge to a fixed point of the objective function. The convergence
 tolerance of the second stage is controlled by <code>tol</code>;
 specifically, the algorithm terminates when the difference between the
-log-likelihood between two successive iterations is less than
+log-likelihood in two successive iterations is less than
 <code>n*tol</code>, where n is the number of samples. Input
 <code>max.iter</code> specifies the maximum number of iterations in
 the second stage.
@@ -177,5 +177,5 @@ frequency estimates;
 number of individuals (samples). For labeled samples, the admixture
 proportions are Q[i,k] = 1 for z[i] = k.
 
-<code>loglikelihood<code>, the log-likelihood at each iteration of
+<code>loglikelihood</code>, the log-likelihood at each iteration of
 TurboEM.
