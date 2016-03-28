@@ -98,19 +98,21 @@ cat("Computing maximum-likelihood admixture estimates.\n")
 X <- rbind(geno.train,geno.test)
 z <- c(q.train %*% 1:K,rep(NA,n.test))
 r <- system.time(out.em <-
-       admixture.em(X,K,z,e = e,mc.cores = mc.cores))
+       admixture.em(X,K,z,e = e,mc.cores = mc.cores,method = "em",
+                    control.method = list(list()),tol = 1e-4))
 with(out.em,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
 rm(r)
-                 
+
+stop()
+
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------
 cat("Computing L0-penalized admixture proportion estimates.\n")
 r <- system.time(out.sparse <-
        admixture.em(X,K,z,e = e,a = a,F = out.em$F,Q = out.em$Q,
-                    exact.q = FALSE,T = T,mc.cores = mc.cores,
-                    init.iter = 5))
+                    exact.q = FALSE,T = T,mc.cores = mc.cores))
 with(out.sparse,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))

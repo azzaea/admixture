@@ -17,6 +17,9 @@
 #   get.turboem.params(F,Q)
 #   admixture.loglikelihood(par,auxdata)
 #   admixture.em.update(par,auxdata)
+#
+#   TO DO: Update "admixture.em" usage.
+#
 #   admixture.em(X,K,z,e,a,F,Q,update.F,update.Q,init.iter,max.iter,
 #                tol,exact.q,T,mc.cores)
 #
@@ -454,10 +457,17 @@ admixture.loglikelihood <- function (par, auxdata) {
 # admixture.em.
 admixture.em.update <- function (par, auxdata) {
 
-  # This is a small constant added to allele frequency estimates to
-  # ensure that the frequency estimates are always greater than zero.
-  eps <- 0.001  
+  # Add this number to the M-step update for the allele frequencies.
+  # This is equivalent to placing a Beta(1 + ne,1 + ne) prior on the
+  # allele frequencies.
+  ne <- 0.01
 
+  # Add this number to the M-step update for the admixture
+  # proportions. This is equivalent to placing a Dirichlet(1 +
+  # me,...,1 + me) prior on the admixture proportions. Note that this
+  # is currently only used for the case when a = 0.
+  me <- 1
+  
   # All proportions greater than this number are considered 0.
   zero <- 1e-6
   
@@ -497,12 +507,12 @@ admixture.em.update <- function (par, auxdata) {
   # samples. I add a small constant to n0 and n1 so that the counts are
   # never exactly zero.  
   if (length(i) == 0) {
-    n0 <- matrix(eps,p,K)
-    n1 <- matrix(eps,p,K)
+    n0 <- matrix(0,p,K)
+    n1 <- matrix(0,p,K)
   } else {
     out <- admixture.labeled.Estep.fast(X[i,],F,z[i],e)
-    n0  <- out$n0 + eps
-    n1  <- out$n1 + eps
+    n0  <- out$n0
+    n1  <- out$n1
     rm(out)
   }
   
@@ -519,12 +529,12 @@ admixture.em.update <- function (par, auxdata) {
   # Adjust the allele frequencies using the standard M-step
   # update.
   if (update.F)
-    F <- n1/(n0 + n1)
+    F <- (n1 + ne)/(n0 + n1 + 2*ne)
 
   # Update the admixture proportions in the unlabeled samples.
   if (update.Q) {
     if (a == 0)
-      Q[j,] <- M/rowSums(M)
+      Q[j,] <- (M + me)/(rowSums(M + me))
     else if (exact.q)
       Q[j,] <- update.q.sparse.exact(M,a)
     else
@@ -532,11 +542,13 @@ admixture.em.update <- function (par, auxdata) {
   }
   
   # Output the M-step update.
-  cat("*")
   return(get.turboem.params(F,Q[j,]))
 }
 
 # ----------------------------------------------------------------------
+#
+# TO DO: Update these comments.
+#
 # Estimate population-specific allele frequencies and admixture
 # proportions in unlabeled samples from genotypes. The non-optional
 # inputs are as follows:
@@ -575,10 +587,10 @@ admixture.em.update <- function (par, auxdata) {
 # explanation of input T, see function update.q.sparse.approx.
 admixture.em <-
   function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
-            update.F = TRUE, update.Q = TRUE, init.iter = 40,
-            max.iter = 1e4, tol = 0.001, exact.q = FALSE, T = 1,
-            mc.cores = 1) {
-
+            update.F = TRUE, update.Q = TRUE, max.iter = 1e4, tol = 1e-4,
+            exact.q = FALSE, T = 1, mc.cores = 1,method = "squarem",
+            control.method = list(square = TRUE,K = 3)) {
+    
   # Get the number of samples (n) and the number of markers (p).
   n <- nrow(X)
   p <- ncol(X)
@@ -619,75 +631,53 @@ admixture.em <-
   else
     u <- NULL
 
-  # NOTE: This function is currently not used, but perhaps it will be
-  # useful in the future, so I am keeping this code snippet here.
-  #
-  # Define a function to check convergence of the
-  # iterates. Currently this is only used for running the SQUAREM
-  # algorithm when the L0-penalty term is included (i.e., a > 0).
-  # check.convergence = function (old, new) {
-  # 
-  #   # Get some of the inputs to function admixture.em.    
-  #   tol <- get("tol",envir = environment(convfn.user))
-  #   p   <- get("p",envir = environment(convfn.user))
-  #   K   <- get("K",envir = environment(convfn.user))
-  #   z   <- get("z",envir = environment(convfn.user))
-  # 
-  #   # Get the previous parameter estimates.
-  #   out <- get.admixture.params(old,p,z,K) 
-  #   F0  <- out$F
-  #   Q0  <- out$Q
-  #   rm(out)
-  #   
-  #   # Get the current parameter estimates.
-  #   out <- get.admixture.params(new,p,z,K) 
-  #   F   <- out$F
-  #   Q   <- out$Q
-  #   rm(out)
-  #   
-  #   # Check convergence.
-  #   err <- list(f = max(abs(F0 - F)),
-  #               q = max(abs(Q0 - Q)))
-  #   cat("*")
-  #   return(max(max(err$f),max(err$q)) < tol)
-  # }
+  # Define a function to check convergence of the iterates.
+  check.convergence <- function (old, new) {
 
-  # Find a good initialization of the model parameters using the
-  # quasi-Newton acceleration of EM.
-  cat("Running",init.iter,"iterations of Quasi-Newton algorithm.\n")
-  out <- turboem(par = get.turboem.params(F,Q),method = "qn",
-                 fixptfn = admixture.em.update,
-                 objfn = admixture.loglikelihood,
-                 pconstr = function (x) TRUE,
-                 control.run = list(maxiter = init.iter,trace = FALSE,
-                   convtype = "objfn",tol = 1e-16,keep.objfval = TRUE),
-                 auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                   u = u,update.F = update.F,update.Q = update.Q,
-                   exact.q = exact.q,mc.cores = mc.cores))
-  par.init      <- as.vector(out$pars)
-  loglikelihood <- (-out$trace.objfval[[1]]$trace)
-  cat("\n")
-  rm(out)
-    
-  # After having identified a good initialization of the model
-  # parameters using the quasi-Newton algorithm, continue to optimize
-  # the model parameters using the Dynamic ECME algorithm.
-  cat("Running Dynamic ECME algorithm until convergence.\n")
-  out <- turboem(par = par.init,method = "decme",
+    # Retrieve some of the inputs to function admixture.em using "get".
+    tol <- get("tol",envir = environment(convfn.user))
+    p   <- get("p",envir = environment(convfn.user))
+    K   <- get("K",envir = environment(convfn.user))
+    z   <- get("z",envir = environment(convfn.user))
+
+    # Get the previous parameter estimates.
+    out <- get.admixture.params(old,p,z,K) 
+    F0  <- out$F
+    Q0  <- out$Q
+    rm(out)
+  
+    # Get the current parameter estimates.
+    out <- get.admixture.params(new,p,z,K) 
+    F   <- out$F
+    Q   <- out$Q
+    rm(out)
+
+    # Check convergence.
+    err <- list(f = max(abs(F0 - F)),
+                q = max(abs(Q0 - Q)))
+    d   <- max(max(err$f),max(err$q))
+    caterase(sprintf("delta = %0.1e",d))
+    return(d < tol)
+  }
+  
+  # Optimize the model parameters using the selected TurboEM algorithm.
+  cat("Running",method,"algorithm until convergence.\n")
+  out <- turboem(par = get.turboem.params(F,Q),method = method,
                  fixptfn = admixture.em.update,
                  objfn = admixture.loglikelihood,
                  pconstr = function (x) TRUE,
                  boundary = function (par, dr) c(-1e8,1e8),
+                 control.method = control.method,
                  control.run = list(maxiter = max.iter,trace = FALSE,
-                   convtype = "objfn",tol = n*tol,keep.objfval = TRUE),
+                   convtype = "parameter",convfn.user = check.convergence,
+                   tol = tol,keep.objfval = TRUE),
                  auxdata = list(X = X,K = K,z = z,e = e,a = a,T = T,
-                   u = u,update.F = update.F,update.Q = update.Q,
+                    u = u,update.F = update.F,update.Q = update.Q,
                    exact.q = exact.q,mc.cores = mc.cores))
   par           <- as.vector(out$pars)
-  loglikelihood <- c(loglikelihood,-out$trace.objfval[[1]]$trace)
+  loglikelihood <- (-out$trace.objfval[[1]]$trace)
   cat("\n")
-  rm(out)
-
+  
   # Return a list containing the estimated allele frequencies (F)
   # admixture proportions (Q), and the output from turboem.
   return(c(get.admixture.params(par,p,z,K),

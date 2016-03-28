@@ -76,8 +76,10 @@ rm(r,markers)
 # COMPUTE ADMIXTURE ESTIMATES USING TURBOEM
 # -----------------------------------------
 cat("Fitting admixture model to data.\n")
-r <- system.time(out.em <- admixture.em(sim.data$geno,K,e = e,
-                                        mc.cores = mc.cores))
+r <- system.time(out.em <-
+                 admixture.em(sim.data$geno,K,e = e,mc.cores = mc.cores,
+                              tol = 1e-4,method = "decme",
+                              control.method = list(list())))
 with(out.em,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
@@ -92,13 +94,15 @@ out.em$Q <- out.em$Q[,cols]
 out.em$F <- out.em$F[,cols]
 rm(cols,i)
 
+stop()
+
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
 cat("Fitting L0-penalized admixture model to data.\n")
 r <- system.time(out.sparse <-
        admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                    F = out.em$F,Q = out.em$Q,init.iter = 5,
-                    mc.cores = mc.cores))
+                    F = out.em$F,Q = out.em$Q,mc.cores = mc.cores,tol = 1e-4,
+                    method = "decme",control.method = list(list())))
 with(out.sparse,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n\n",
          length(loglikelihood),r["elapsed"]/60)))

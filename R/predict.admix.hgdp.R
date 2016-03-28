@@ -47,6 +47,7 @@ suppressPackageStartupMessages({
 library(parallel)
 library(data.table)
 library(turboEM)
+library(SQUAREM)
 source("misc.R")
 source("mcmc.R")
 source("read.data.R")
@@ -59,7 +60,7 @@ dyn.load("admixture.so")})
 K        <- 7      # Number of ancestral populations.
 e        <- 0.001  # Probability of a genotype error.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 20     # Number of CPUs to use.
+mc.cores <- 10     # Number of CPUs to use.
 
 # The .traw file containing the genotypes of the HGDP samples.
 traw.file <- "hgdp.traw"
@@ -76,8 +77,7 @@ set.seed(seed)
 # COMPUTE MAXIMUM LIKELIHOOD ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------------
 cat("Fitting admixture model to data.\n")
-r <- system.time(out <- admixture.em(geno,K,e = e,tol = 0.01,
-                                     mc.cores = mc.cores))
+r <- system.time(out <- admixture.em(geno,K,e = e,mc.cores = mc.cores))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
@@ -85,4 +85,4 @@ with(out,
 # SAVE RESULTS TO FILE
 # --------------------
 save(list = c("K","e","seed","out","r"),
-     file = "hgdp.out.RData")
+     file = "hgdp.out.method=squarem.K=5.RData")
