@@ -60,24 +60,20 @@ dyn.load("admixture.so")})
 K        <- 7      # Number of ancestral populations.
 e        <- 0.001  # Probability of a genotype error.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 10     # Number of CPUs to use.
-
-# The .traw file containing the genotypes of the HGDP samples.
-traw.file <- "hgdp.traw"
+mc.cores <- 15     # Number of CPUs to use.
 
 # LOAD GENOTYPES
 # --------------
 # Read the genotype data from the .traw file.
 cat("Loading genotype data from .traw file.\n")
-geno <- read.traw.file(traw.file)$geno
+geno <- read.traw.file("hgdp.traw")$geno
 
 # LOAD INITIAL ESTIMATES
 # ----------------------
-# Load the initial estimates of the admixture proportions.
-# TO DO.
-
-# Load the initial estimates of the allele frequencies.
-# TO DO.
+# Load the initial estimates of the admixture proportions and allele
+# frequencies.
+Q0 <- as.matrix(read.table("../data/hgdp.7.Q.in",sep = " "))
+F0 <- as.matrix(read.table("../data/hgdp.7.P.in",sep = " "))
 
 # Initialize the random number generator.
 set.seed(seed)
@@ -86,12 +82,11 @@ set.seed(seed)
 # ------------------------------------------------------------
 cat("Fitting admixture model to data.\n")
 r <- system.time(out <- admixture.em(geno,K,e = e,F = F0,Q = Q0,
-                                     mc.cores = mc.cores))
+                                     mc.cores = mc.cores,method = "squarem",
+                                     control.method = list(square=TRUE,K=5)))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
-
-stop()
 
 # SAVE RESULTS TO FILE
 # --------------------

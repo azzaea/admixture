@@ -681,5 +681,11 @@ admixture.em <-
   # Return a list containing the estimated allele frequencies (F)
   # admixture proportions (Q), and the output from turboem.
   return(c(get.admixture.params(par,p,z,K),
-           list(loglikelihood = loglikelihood)))
+           list(loglikelihood = loglikelihood,
+                fail          = out$fail,
+                itr           = out$itr,
+                objfeval      = out$objfeval,
+                fpeval        = out$fpeval,
+                runtime       = out$runtime,
+                convergence   = out$convergence)))
 }
