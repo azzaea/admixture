@@ -14,13 +14,13 @@ dyn.load("admixture.so")})
 # SCRIPT PARAMETERS
 # -----------------
 p        <- 200   # Number of (unlinked) markers.
-K        <- 20    # Number of ancestral populations.
+K        <- 4     # Number of ancestral populations.
 n        <- 100   # Number of single-origin training samples.
 prop.na  <- 0.01  # Proportion of genotypes that are missing.
 e        <- 0.01  # Probability of genotype error.
 a        <- 2e-3  # L0-penalty strength.
 seed     <- 1     # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 2     # Number of CPUs to use.
+mc.cores <- 20    # Number of CPUs to use.
 
 # A vector that specifies, for each test individual, the number of
 # populations contributing to the individual's genome.
@@ -98,14 +98,11 @@ cat("Computing maximum-likelihood admixture estimates.\n")
 X <- rbind(geno.train,geno.test)
 z <- c(q.train %*% 1:K,rep(NA,n.test))
 r <- system.time(out.em <-
-       admixture.em(X,K,z,e = e,mc.cores = mc.cores,method = "em",
-                    control.method = list(list()),tol = 1e-4))
+       admixture.em(X,K,z,e = e,mc.cores = mc.cores))
 with(out.em,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
 rm(r)
-
-stop()
 
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING TURBOEM
 # ------------------------------------------------------

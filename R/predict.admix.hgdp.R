@@ -82,8 +82,7 @@ set.seed(seed)
 # ------------------------------------------------------------
 cat("Fitting admixture model to data.\n")
 r <- system.time(out <- admixture.em(geno,K,e = e,F = F0,Q = Q0,
-                                     mc.cores = mc.cores,method = "squarem",
-                                     control.method = list(square=TRUE,K=5)))
+                                     mc.cores = mc.cores))
 with(out,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
@@ -91,4 +90,4 @@ with(out,
 # SAVE RESULTS TO FILE
 # --------------------
 save(list = c("K","e","seed","out","r"),
-     file = "hgdp.out.method=squarem.K=5.RData")
+     file = "hgdp.out.RData")

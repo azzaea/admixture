@@ -26,7 +26,7 @@ mc.cores <- 20    # Number of CPUs to use.
 # demography under the neutral Wright–Fisher diffusion model, see:
 # Nicholson et al (2002), "Assessing population differentiation and
 # isolation from single-nucleotide polymorphism data," Journal of the
-# Royal Statistical Society, Series B 64(4): 695–715.
+# Royal Statistical Society, Series B 64(4): 695-715.
 d <- rep(0.1,10)
 
 # The sequence of inverse temperatures for simulated annealing such
@@ -77,9 +77,7 @@ rm(r,markers)
 # -----------------------------------------
 cat("Fitting admixture model to data.\n")
 r <- system.time(out.em <-
-                 admixture.em(sim.data$geno,K,e = e,mc.cores = mc.cores,
-                              tol = 1e-4,method = "decme",
-                              control.method = list(list())))
+                 admixture.em(sim.data$geno,K,e = e,mc.cores = mc.cores))
 with(out.em,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n",
                  length(loglikelihood),r["elapsed"]/60)))
@@ -94,15 +92,12 @@ out.em$Q <- out.em$Q[,cols]
 out.em$F <- out.em$F[,cols]
 rm(cols,i)
 
-stop()
-
 # COMPUTE L0-PENALIZED ADMIXTURE ESTIMATES USING EM
 # -------------------------------------------------
 cat("Fitting L0-penalized admixture model to data.\n")
 r <- system.time(out.sparse <-
        admixture.em(sim.data$geno,K,e = e,a = a,exact.q = FALSE,T = T,
-                    F = out.em$F,Q = out.em$Q,mc.cores = mc.cores,tol = 1e-4,
-                    method = "decme",control.method = list(list())))
+                    F = out.em$F,Q = out.em$Q,mc.cores = mc.cores))
 with(out.sparse,
      cat(sprintf("Turbo-EM completed after %d iterations and %0.1f min.\n\n",
          length(loglikelihood),r["elapsed"]/60)))

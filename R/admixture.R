@@ -515,7 +515,7 @@ admixture.em.update <- function (par, auxdata) {
     n1  <- out$n1
     rm(out)
   }
-  
+
   # Compute the expected allele counts and the expected population
   # counts in the unlabeled samples only.
   out <- admixture.unlabeled.Estep.mc(X[j,],F,Q[j,],n0,n1,e,mc.cores)
