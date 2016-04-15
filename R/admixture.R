@@ -17,11 +17,8 @@
 #   get.turboem.params(F,Q)
 #   admixture.loglikelihood(par,auxdata)
 #   admixture.em.update(par,auxdata)
-#
-#   TO DO: Update "admixture.em" usage.
-#
-#   admixture.em(X,K,z,e,a,F,Q,update.F,update.Q,init.iter,max.iter,
-#                tol,exact.q,T,mc.cores)
+#   admixture.em(X,K,z,e,a,F,Q,update.F,update.Q,max.iter,tol,exact.q,T,
+#                mc.cores,method,control.method)
 #
 # FUNCTION DEFINITIONS
 # ----------------------------------------------------------------------
@@ -546,9 +543,6 @@ admixture.em.update <- function (par, auxdata) {
 }
 
 # ----------------------------------------------------------------------
-#
-# TO DO: Update these comments.
-#
 # Estimate population-specific allele frequencies and admixture
 # proportions in unlabeled samples from genotypes. The non-optional
 # inputs are as follows:
@@ -585,6 +579,9 @@ admixture.em.update <- function (par, auxdata) {
 # = FALSE computes an approximate solution using a simulated annealing
 # algorithm. In this case, it is necessary to set input T. For an
 # explanation of input T, see function update.q.sparse.approx.
+#
+# See the README for more details on calling this function.
+#
 admixture.em <-
   function (X, K, z = NULL, e = 0.001, a = 0, F = NULL, Q = NULL,
             update.F = TRUE, update.Q = TRUE, max.iter = 1e4, tol = 1e-4,

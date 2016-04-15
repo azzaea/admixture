@@ -100,7 +100,11 @@ their genotypes.
 				mc.cores = 1)
 
 #### Arguments
-				 
+
+max.iter = 1e4, tol = 1e-4,
+method = "squarem",
+            control.method = list(square = TRUE,K = 3)) {
+
 Input <code>X</code> is an n x p genotype matrix, where n is the
 number of samples and p is the number of biallic genetic
 markers. Genotypes are represented as allele counts, so all entries
@@ -118,7 +122,7 @@ Input <code>e</code> specifies the probably of a genotype error. It
 must be a positive number. It can be small (e.g., 1e-6), but note that
 small values tend to increase convergence time of the EM algorithm.
 
-Input </code>a</code> specifies the strength of the L0-penalty term
+Input <code>a</code> specifies the strength of the L0-penalty term
 that encourages sparsity in the admixture estimates. By default, a =
 0, which means that the L0-penalty term has no effect, and the
 maximum-likelihood estimate is returned. I have implemented a
@@ -135,20 +139,17 @@ frequencies or admixture proportions constant by setting
 <code>update.F = FALSE</code> or <code>update.Q = FALSE</code>. For
 more details on F and Q, see below.
 
-Inputs <code>init.iter</code>, <code>max.iter</code> and
-<code>tol</code> control the optimization settings. The optimization
-is performed in two stages: the first stage finds a good global
-initialization of the model parameters by making a fixed number of EM
-updates that are scaled by the quasi-Newton approximation to the
-Hessian (<code>method = "qn"</code> in turboem); the second stage uses
-the DECME method (<code>method = "decme"</code> in turboem) to quickly
-converge to a fixed point of the objective function. The convergence
-tolerance of the second stage is controlled by <code>tol</code>;
-specifically, the algorithm terminates when the difference between the
-log-likelihood in two successive iterations is less than
-<code>n*tol</code>, where n is the number of samples. Input
-<code>max.iter</code> specifies the maximum number of iterations in
-the second stage.
+Inputs <code>max.iter</code>, <code>tol</code>, <code>method</code>
+and <code>control.method</code> specify the optimization settings. The
+convergence tolerance is controlled by <code>tol</code>; specifically,
+the algorithm terminates when the maximum absolute difference between
+the model parameters in two successive iterations is less than
+<code>tol</code>. Input <code>max.iter</code> specifies the maximum
+number of iterations of TurboEM. Finally, <code>method</code> and
+<code>control.method</code> are inputs to function turboem. For
+details on these two inputs, see <code>help(turboem)</code>. By
+default, we use the SQUAREM algorithm, since it has yielded the
+fastest convergance and best solutions in our experiments.
 
 There are two variations to the M-step update for Q when a > 0. When
 the number of ancestral populations is small (e.g., K < 20), it is

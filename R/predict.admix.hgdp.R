@@ -60,7 +60,7 @@ dyn.load("admixture.so")})
 K        <- 7      # Number of ancestral populations.
 e        <- 0.001  # Probability of a genotype error.
 seed     <- 1      # Specifies the sequence of pseudorandom numbers.
-mc.cores <- 15     # Number of CPUs to use.
+mc.cores <- 4      # Number of CPUs to use.
 
 # LOAD GENOTYPES
 # --------------
