@@ -148,8 +148,8 @@ the model parameters in two successive iterations is less than
 number of iterations of TurboEM. Finally, <code>method</code> and
 <code>control.method</code> are inputs to function turboem. For
 details on these two inputs, see <code>help(turboem)</code>. By
-default, we use the SQUAREM algorithm, since it has yielded the
-fastest convergance and best solutions in our experiments.
+default, we use the SQUAREM algorithm since it has produced the best
+solutions and fastest convergence in our experiments.
 
 There are two variations to the M-step update for Q when a > 0. When
 the number of ancestral populations is small (e.g., K < 20), it is
